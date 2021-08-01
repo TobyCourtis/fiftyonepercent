@@ -1,17 +1,15 @@
 from binance.error import ClientError
 from binance.spot import Spot as Client
-from notify.notify import google_mini_notify
 import json
 
 # examples folder contains more request types
 # https://github.com/binance/binance-connector-python/blob/master/examples
-with open("./keys/testnet-keys.json") as json_data:
+with open("../keys/testnet-keys.json") as json_data:
     keys = json.loads(json_data.read())
     TESTNET_API_KEY = keys["API_KEY"]
     TESTNET_API_SECRET = keys["API_SECRET"]
 
 client = Client()
-
 client = Client(TESTNET_API_KEY, TESTNET_API_SECRET, base_url="https://testnet.binance.vision")
 
 params = {
@@ -26,7 +24,6 @@ params = {
 try:
     response = client.new_order(**params)
     print(response)
-    google_mini_notify('Order went through')
 except ClientError as error:
     print(
         "Found error. status: {}, error code: {}, error message: {}".format(
@@ -39,7 +36,6 @@ try:
     response = client.get_orders("BTCUSDT")
     for i in response:
         print(i)
-    google_mini_notify(f"You have made {len(response)} orders today")
 except ClientError as error:
     print(
         "Found error. status: {}, error code: {}, error message: {}".format(
