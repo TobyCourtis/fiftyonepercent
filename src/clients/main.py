@@ -6,7 +6,7 @@ from binance.spot import Spot
 
 
 def create_client():
-    test = True
+    test = False
     if test:
         key_path = os.path.dirname(__file__) + "/../keys/testnet-keys.json"
         base_url = "https://testnet.binance.vision"
