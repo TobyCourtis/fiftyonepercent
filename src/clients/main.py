@@ -91,6 +91,9 @@ def list_all(dict):
         print(f"{i}: {dict[i]}")
 
 
+# Binance Orders
+
+
 # TA utils
 def moving_average(klines):
     # take klines and get avg of each kline
