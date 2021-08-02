@@ -1,12 +1,14 @@
 import datetime
 import json
+import os
 
 from binance.spot import Spot
 
 
 def create_client():
     test = True
-    with open("./keys/testnet-keys.json" if test else "./keys/default-keys.json") as json_data:
+    with open(os.path.dirname(__file__) + "/../keys/testnet-keys.json" if test else
+              os.path.dirname(__file__) + "/../keys/default-keys.json") as json_data:
         keys = json.loads(json_data.read())
         API_KEY = keys["API_KEY"]
         API_SECRET = keys["API_SECRET"]
