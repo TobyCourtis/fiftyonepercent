@@ -1,3 +1,4 @@
 /.idea/
 /src/keys/
 src/clients/__pycache__/
+src/notify/__pycache__/
