@@ -1,7 +1,7 @@
-from binance.spot import Spot
-import json
 import datetime
-import numpy as np
+import json
+
+from binance.spot import Spot
 
 
 def create_client():
@@ -45,10 +45,10 @@ def avg_price():
     return avg_price["price"]
 
 
-def get_klines():
+def get_klines(timeframe, limit, **kwargs):  # hours, days
     timeNow = datetime.datetime.now().timestamp() * 1000
-    startTime = (datetime.datetime.now() - datetime.timedelta(days=1)).timestamp() * 1000
-    klines = client.klines("ETHGBP", "15m", limit="8", startTime=int(startTime), endTime=int(timeNow))
+    startTime = (datetime.datetime.now() - datetime.timedelta(**kwargs)).timestamp() * 1000
+    klines = client.klines("ETHGBP", timeframe, limit=limit, startTime=int(startTime), endTime=int(timeNow))
     labelledKlines = {
         "Open time": [x[0] for x in klines],
         "Open": [x[1] for x in klines],
@@ -95,4 +95,5 @@ def kline_average(kline):
 
 
 if (__name__ == "__main__"):
-    print("MA: ", moving_average(get_klines()))
+    # print("MA: ", moving_average(get_klines()))
+    print()

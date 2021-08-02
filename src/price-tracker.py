@@ -1,13 +1,37 @@
-from clients.binance import *
+from clients.main import *
 from notify.notify import *
+import sys
 
-MA = moving_average(get_klines())
-cur_avg = float(avg_price())
-if cur_avg > MA:
-    print(f"ETH is up {cur_avg - MA}")
-    google_mini_notify(f"ETH is up {cur_avg - MA}")
-    slack_notify(f"ETH is up {cur_avg - MA}")
-else:
-    print(f"ETH is down {MA - cur_avg}")
-    google_mini_notify(f"ETH is down {MA - cur_avg}")
-    slack_notify(f"ETH is down {MA - cur_avg}")
+
+# price tracker
+# first parameter must be hourly,daily,monthly
+
+def notify_up(timeframe, change):
+    msg = f"{timeframe}: Ethereum is up {round(change, 1)} percent "
+    print(msg)
+    google_mini_notify(msg)
+    slack_notify(msg)
+
+
+def notify_down(timeframe, change):
+    msg = f"{timeframe}: Ethereum is down {round(change, 1)} percent."
+    print(msg)
+    google_mini_notify(msg)
+    slack_notify(msg)
+
+
+if sys.argv[1] == "daily":
+    MA = moving_average(get_klines("15m", 8, days=1))
+    perc_change = (float(avg_price()) / MA * 100) - 100
+    if perc_change > 0:
+        notify_up("Daily", perc_change)
+    else:
+        notify_down("Daily", perc_change)
+
+elif sys.argv[1] == "hourly":
+    MA = moving_average(get_klines("1m", 20, minutes=70))
+    perc_change = (float(avg_price()) / MA * 100) - 100
+    if perc_change > 0:
+        notify_up("Hourly", perc_change)
+    else:
+        notify_down("Hourly", perc_change)
