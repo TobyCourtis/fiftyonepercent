@@ -10,7 +10,7 @@ with open("../keys/testnet-keys.json") as json_data:
     TESTNET_API_SECRET = keys["API_SECRET"]
 
 client = Client()
-client = Client(TESTNET_API_KEY, TESTNET_API_SECRET, base_url="https://testnet.binance.vision")
+client = Client(TESTNET_API_KEY, TESTNET_API_SECRET, )
 
 params = {
     "symbol": "BTCUSDT",

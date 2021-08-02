@@ -7,32 +7,42 @@ from binance.spot import Spot
 
 def create_client():
     test = True
-    with open(os.path.dirname(__file__) + "/../keys/testnet-keys.json" if test else
-              os.path.dirname(__file__) + "/../keys/default-keys.json") as json_data:
+    if test:
+        key_path = os.path.dirname(__file__) + "/../keys/testnet-keys.json"
+        base_url = "https://testnet.binance.vision"
+    else:
+        key_path = os.path.dirname(__file__) + "/../keys/default-keys.json"
+        base_url = "https://api.binance.com"
+
+    with open(key_path) as json_data:
         keys = json.loads(json_data.read())
         API_KEY = keys["API_KEY"]
         API_SECRET = keys["API_SECRET"]
 
-    client = Spot(key=API_KEY, secret=API_SECRET)
-    return client
+    return Spot(key=API_KEY, secret=API_SECRET, base_url=base_url)
 
 
 client = create_client()
 
 
-# Binance API
+# Binance API utils
 
 def account_info():
     print("Account Info")
-    account_info = client.account()
-    for i in account_info:
-        print(f"{i}: {account_info[i]}")
+    acc_info = client.account(recvWindow=60000)  # TODO time sync and lower recvWindow
+    for i in acc_info:
+        if i == 'balances':
+            print("balance:")
+            for currency in acc_info[i]:
+                list_all(currency)
+        else:
+            print(f"{i}: {acc_info[i]}")
 
 
-def coin_info(coinType):
+def coin_info(symbol):
     coin_info = client.coin_info()
     for coin in coin_info:
-        if coin["coin"] == coinType:
+        if coin["coin"] == symbol:
             print(f"\nETH balance: {coin['free']}")
 
 
@@ -81,7 +91,7 @@ def list_all(dict):
         print(f"{i}: {dict[i]}")
 
 
-# TA
+# TA utils
 def moving_average(klines):
     # take klines and get avg of each kline
     averages = []
@@ -96,6 +106,5 @@ def kline_average(kline):
     return kline["Close"]  # could also take indexOf Close
 
 
-if (__name__ == "__main__"):
-    # print("MA: ", moving_average(get_klines()))
-    print()
+if __name__ == "__main__":
+    account_info()
