@@ -2,3 +2,4 @@
 /src/keys/
 src/clients/__pycache__/
 src/notify/__pycache__/
+.DS_Store
