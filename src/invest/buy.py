@@ -1,2 +1,0 @@
-def buy():
-    return "purchased"

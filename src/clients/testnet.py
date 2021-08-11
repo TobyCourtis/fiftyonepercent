@@ -4,6 +4,8 @@ from main import list_all, account_info
 import json
 import os
 
+# TODO refactor testnet - remove or alter
+
 # examples folder contains more request types
 # https://github.com/binance/binance-connector-python/blob/master/examples
 with open(os.path.dirname(__file__) + "/../keys/testnet-keys.json") as json_data:
