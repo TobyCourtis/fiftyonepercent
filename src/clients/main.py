@@ -5,9 +5,6 @@ import os
 from binance.spot import Spot
 from binance.error import ClientError
 
-
-# from src import invest
-
 class BinanceClient:
     def __init__(self, **kwargs):
         if "test" in kwargs:
@@ -152,6 +149,4 @@ class BinanceClient:
 
 if __name__ == "__main__":
     client = BinanceClient(test=True)
-    # print(client.exchange_info())
-    # client.buy("BTCUSDT")
     client.show_orders("BTCUSDT")
