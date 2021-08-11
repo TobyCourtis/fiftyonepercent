@@ -4,9 +4,11 @@ import os
 
 from binance.spot import Spot
 
+from src import invest
+
 
 def create_client():
-    test = False
+    test = True
     if test:
         key_path = os.path.dirname(__file__) + "/../keys/testnet-keys.json"
         base_url = "https://testnet.binance.vision"
@@ -110,4 +112,5 @@ def kline_average(kline):
 
 
 if __name__ == "__main__":
-    account_info()
+    print(invest.buy())
+    print(invest.sell())

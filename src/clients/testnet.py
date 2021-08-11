@@ -6,7 +6,7 @@ import os
 
 # examples folder contains more request types
 # https://github.com/binance/binance-connector-python/blob/master/examples
-with open(os.path.dirname(__file__) +  "/../keys/testnet-keys.json") as json_data:
+with open(os.path.dirname(__file__) + "/../keys/testnet-keys.json") as json_data:
     keys = json.loads(json_data.read())
     TESTNET_API_KEY = keys["API_KEY"]
     TESTNET_API_SECRET = keys["API_SECRET"]

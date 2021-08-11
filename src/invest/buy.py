@@ -1,0 +1,2 @@
+def buy():
+    return "purchased"
