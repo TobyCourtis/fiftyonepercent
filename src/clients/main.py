@@ -103,7 +103,7 @@ class BinanceClient:
             "recvWindow": 60000
         }
 
-        print("Order to sell BTC:")
+        print(f"Order to sell {symbol}:")
         try:
             response = self.client.new_order(**params)
             self.list_all(response)
@@ -115,6 +115,9 @@ class BinanceClient:
             )
 
     def sell(self):
+        if not self.test:
+            print("Selling is disabled outside of test mode")
+            exit()
         # TODO
         print("sell")
 
@@ -149,4 +152,4 @@ class BinanceClient:
 
 if __name__ == "__main__":
     client = BinanceClient(test=True)
-    client.show_orders("BTCUSDT")
+    client.show_orders("ETHUSDT")
