@@ -56,10 +56,16 @@ class BinanceClient:
         self.list_all(avg_price)
         return avg_price["price"]
 
+    def ticker(self):
+        print(self.client.ticker_price("ETHGBP"))
+
     def get_klines(self, timeframe, limit, **kwargs):  # hours, days
         timeNow = datetime.datetime.now().timestamp() * 1000
         startTime = (datetime.datetime.now() - datetime.timedelta(**kwargs)).timestamp() * 1000
-        klines = self.client.klines("ETHGBP", timeframe, limit=limit, startTime=int(startTime), endTime=int(timeNow))
+
+        symbol = "ETHUSDT" if self.test else "ETHGBP"
+        klines = self.client.klines(symbol, timeframe, limit=limit, startTime=int(startTime), endTime=int(timeNow))
+
         labelledKlines = {
             "Open time": [x[0] for x in klines],
             "Open": [x[1] for x in klines],
@@ -75,9 +81,6 @@ class BinanceClient:
             "Ignore": [x[11] for x in klines],
         }
         return labelledKlines
-
-    def ticker(self):
-        print(self.client.ticker_price("ETHGBP"))
 
     def ticker_24h(self):
         print(self.client.ticker_24hr("ETHGBP"))
@@ -151,5 +154,5 @@ class BinanceClient:
 
 
 if __name__ == "__main__":
-    client = BinanceClient(test=True)
-    client.show_orders("ETHUSDT")
+    client = BinanceClient(test=False)
+    print(client.get_klines("15m", 8, days=1))
