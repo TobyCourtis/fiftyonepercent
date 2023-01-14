@@ -2,8 +2,11 @@ import datetime
 import json
 import os
 
-from binance.spot import Spot
 from binance.error import ClientError
+from binance.spot import Spot
+
+from src.clients.candlesticks import Candlesticks
+
 
 class BinanceClient:
     def __init__(self, **kwargs):
@@ -11,12 +14,15 @@ class BinanceClient:
             test = kwargs["test"]
         else:
             test = True
-        # allow usage globally
-        self.test = test
+
+        self.test = test  # allow usage globally
+
         if test:
             key_path = os.path.dirname(__file__) + "/../keys/testnet-keys.json"
             base_url = "https://testnet.binance.vision"
         else:
+            input("\nYou are in production mode. Press any key to continue\n")
+
             key_path = os.path.dirname(__file__) + "/../keys/default-keys.json"
             base_url = "https://api.binance.com"
 
@@ -28,11 +34,21 @@ class BinanceClient:
         self.client = Spot(key=API_KEY, secret=API_SECRET, base_url=base_url)
         print(f"Initialised with test mode: {test}")
 
+    """
+    MISC
+    """
+
     def exchange_info(self):
+        """
+        Current exchange trading rules and symbol information
+        :return: Large dictionary of exchange information
+        """
         exchange_info = self.client.exchange_info()
         return exchange_info
 
-    # Binance API utils
+    """
+    ACCOUNT INFORMATION
+    """
 
     def account_info(self):
         print("Account Info")
@@ -45,6 +61,25 @@ class BinanceClient:
             else:
                 print(f"{i}: {acc_info[i]}")
 
+    def show_orders(self, symbol):
+        try:
+            response = self.client.get_orders(symbol, recvWindow=60000)
+            if len(response) == 0:
+                print("No orders were found")
+                return
+            for i in response:
+                print(i)
+        except ClientError as error:
+            print(
+                "Found error. status: {}, error code: {}, error message: {}".format(
+                    error.status_code, error.error_code, error.error_message
+                )
+            )
+
+    """
+    MARKET INFORMATION
+    """
+
     def coin_info(self, symbol):
         coin_info = self.client.coin_info()
         for coin in coin_info:
@@ -56,40 +91,56 @@ class BinanceClient:
         self.list_all(avg_price)
         return avg_price["price"]
 
-    def ticker(self):
-        print(self.client.ticker_price("ETHGBP"))
+    def ticker_price(self):
+        symbol = "ETHUSDT" if self.test else "ETHGBP"  # only ETH supported for now
+        print(self.client.ticker_price(symbol=symbol))
 
-    def get_klines(self, timeframe, limit, **kwargs):  # hours, days
+    def get_klines(self, timeframe, limit, **kwargs) -> Candlesticks:
+        """
+        This is the main marketplace data return function
+
+        :param timeframe: the interval of candlestick, e.g 1s, 1m, 5m, 1h, 1d, etc.
+        :param limit: limit the no. candles returned Default 500; max 1000.
+        :param kwargs: period of time to begin candles from time now minus,  e.g days=1, hours=0, weeks=0, minutes=0
+        :return: Candlesticks object. Containing list of candles.
+        """
         timeNow = datetime.datetime.now().timestamp() * 1000
         startTime = (datetime.datetime.now() - datetime.timedelta(**kwargs)).timestamp() * 1000
 
-        symbol = "ETHUSDT" if self.test else "ETHGBP"
-        klines = self.client.klines(symbol, timeframe, limit=limit, startTime=int(startTime), endTime=int(timeNow))
+        symbol = "ETHUSDT" if self.test else "ETHGBP"  # only ETH supported for now
+        klines = self.client.klines(interval=timeframe,
+                                    limit=limit,
+                                    symbol=symbol,
+                                    startTime=int(startTime),
+                                    endTime=int(timeNow))
 
-        labelledKlines = {
-            "Open time": [x[0] for x in klines],
-            "Open": [x[1] for x in klines],
-            "High": [x[2] for x in klines],
-            "Low": [x[3] for x in klines],
-            "Close": [x[4] for x in klines],
-            "Volume": [x[5] for x in klines],
-            "Close time": [x[6] for x in klines],
-            "Quote asset volume": [x[7] for x in klines],
-            "Number of trades": [x[8] for x in klines],
-            "Taker buy base asset volume": [x[9] for x in klines],
-            "Taker buy quote asset volume": [x[10] for x in klines],
-            "Ignore": [x[11] for x in klines],
-        }
-        return labelledKlines
+        all_candles = Candlesticks()
+        for kline in klines:
+            all_candles.openTime.append(kline[0])
+            all_candles.open.append(kline[1])
+            all_candles.high.append(kline[2])
+            all_candles.low.append(kline[3])
+            all_candles.close.append(kline[4])
+            all_candles.volume.append(kline[5])
+            all_candles.closeTime.append(kline[6])
+            all_candles.quoteAssetVolume.append(kline[7])
+            all_candles.numberOfTrades.append(kline[8])
+            all_candles.takerBuyBaseAssetVolume.append(kline[9])
+            all_candles.takerBuyQuoteAssetVolume.append(kline[10])
+            all_candles.ignore.append(kline[11])
+        return all_candles
 
     def ticker_24h(self):
-        print(self.client.ticker_24hr("ETHGBP"))
+        """
+        24hr Ticker Price Change Statistics for symbol (for now only ETH)
+        :return: 24hour rolling window price change statistics.
+        """
+        symbol = "ETHUSDT" if self.test else "ETHGBP"  # only ETH supported for now
+        return self.client.ticker_24hr(symbol)
 
-    def list_all(self, dict):
-        for i in dict:
-            print(f"{i}: {dict[i]}")
-
-    # invest
+    """
+    TRADE FUNCTIONS
+    """
 
     def buy(self, symbol):
         if not self.test:
@@ -121,38 +172,28 @@ class BinanceClient:
         if not self.test:
             print("Selling is disabled outside of test mode")
             exit()
-        # TODO
+        # TODO implement sell
         print("sell")
 
-    def show_orders(self, symbol):
-        try:
-            response = self.client.get_orders(symbol, recvWindow=60000)
-            if len(response) == 0:
-                print("No orders were found")
-                return
-            for i in response:
-                print(i)
-        except ClientError as error:
-            print(
-                "Found error. status: {}, error code: {}, error message: {}".format(
-                    error.status_code, error.error_code, error.error_message
-                )
-            )
+    """
+    HELPER FUNCTIONS
+    """
 
-    # TA utils
     def moving_average(self, klines):
+        """
+        Moving Average of candlesticks
+        :param klines: Candlesticks object
+        :return: Moving Average of the candles within Candlesticks object
+        """
         # take klines and get avg of each kline
         averages = []
-        for i in klines["Close"]:
+        for i in klines["Close"]:  # TODO change to e.g (O + H + L + C)/4
             averages.append(float(i))
         # add all averages and divide by num klines
         return sum(averages) / len(averages)
 
-    def kline_average(self, kline):
-        # TODO change to e.g (O + H + L + C)/4
-        return kline["Close"]  # could also take indexOf Close
-
 
 if __name__ == "__main__":
-    client = BinanceClient(test=False)
-    print(client.get_klines("15m", 8, days=1))
+    client = BinanceClient(test=True)
+    foo = client.get_klines("15m", 8, days=1)
+    foo.display_data()
