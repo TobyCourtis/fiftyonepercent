@@ -195,5 +195,5 @@ class BinanceClient:
 
 if __name__ == "__main__":
     client = BinanceClient(test=True)
-    foo = client.get_klines("15m", 8, days=1)
+    foo = client.get_klines(timeframe="15m", limit=8, days=1)
     foo.display_data()
