@@ -9,13 +9,13 @@ class Candlesticks:
     """
 
     def __init__(self, **kwargs):
-        self.openTime = []
+        self.openTime = []  # epoch time with 3 d.p
         self.open = []
         self.high = []
         self.low = []
         self.close = []
         self.volume = []
-        self.closeTime = []
+        self.closeTime = []  # epoch time with 3 d.p
         self.quoteAssetVolume = []
         self.numberOfTrades = []
         self.takerBuyBaseAssetVolume = []
@@ -23,7 +23,6 @@ class Candlesticks:
         self.ignore = []
 
     def display_data(self):
-        print(self.openTime)
         pprint(vars(self))
 
 
