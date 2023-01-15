@@ -2,11 +2,12 @@ import datetime
 import json
 import os
 from pprint import pprint
+import pandas as pd
+import matplotlib.pyplot as plt
 
 from binance.error import ClientError
 from binance.spot import Spot
-
-from src.clients.candlesticks import Candlesticks
+from candlesticks import Candlesticks
 
 
 class BinanceClient:
@@ -196,5 +197,14 @@ class BinanceClient:
 
 if __name__ == "__main__":
     client = BinanceClient(test=True)
-    foo = client.get_klines(timeframe="15m", limit=8, days=1)
-    foo.display_data()
+    foo = client.get_klines(timeframe="15m", limit=None, days=50)
+    df = pd.DataFrame(foo.close, columns=['Close'])
+    print(df)
+    df['Short'] = df['Close'].rolling(window=2*6*4).mean()
+    df['Long'] = df['Close'].rolling(window=3*12*4).mean()
+    df.dropna(inplace=True)
+    df = df.astype(float)
+    print(df)
+    df.plot()
+    plt.show()
+    #foo.display_data()
