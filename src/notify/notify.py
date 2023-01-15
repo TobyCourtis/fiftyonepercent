@@ -24,6 +24,7 @@ def slack_notify(text, channel='kingslanding'):
 
 # google_mini_notify("stonks are through the roof right now!")
 # slack_notify("test")
+#test
 
 if __name__ == "__main__":
     slack_notify("Bot test", "crypto-trading")
