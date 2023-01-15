@@ -1,6 +1,7 @@
 import datetime
 import json
 import os
+from pprint import pprint
 
 from binance.error import ClientError
 from binance.spot import Spot
@@ -57,7 +58,7 @@ class BinanceClient:
             if i == 'balances':
                 print("balance:")
                 for currency in acc_info[i]:
-                    self.list_all(currency)
+                    pprint(currency)
             else:
                 print(f"{i}: {acc_info[i]}")
 
@@ -88,7 +89,7 @@ class BinanceClient:
 
     def avg_price(self):
         avg_price = self.client.avg_price("ETHGBP")
-        self.list_all(avg_price)
+        pprint(avg_price)
         return avg_price["price"]
 
     def ticker_price(self):
@@ -160,7 +161,7 @@ class BinanceClient:
         print(f"Order to sell {symbol}:")
         try:
             response = self.client.new_order(**params)
-            self.list_all(response)
+            pprint(response)
         except ClientError as error:
             print(
                 "Found error. status: {}, error code: {}, error message: {}".format(
