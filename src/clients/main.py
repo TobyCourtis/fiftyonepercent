@@ -1,11 +1,8 @@
 import datetime
 import json
 import os
-import time
 from pprint import pprint
 
-import matplotlib.pyplot as plt
-import pandas as pd
 from binance.error import ClientError
 from binance.spot import Spot
 
@@ -179,40 +176,10 @@ class BinanceClient:
         # TODO implement sell
         print("sell")
 
-    """
-    HELPER FUNCTIONS
-    """
-
-    def moving_average(self, klines):
-        """
-        Moving Average of candlesticks
-        :param klines: Candlesticks object
-        :return: Moving Average of the candles within Candlesticks object
-        """
-        # take klines and get avg of each kline
-        averages = []
-        for i in klines["Close"]:  # TODO change to e.g (O + H + L + C)/4
-            averages.append(float(i))
-        # add all averages and divide by num klines
-        return sum(averages) / len(averages)
-
 
 if __name__ == "__main__":
     client = BinanceClient(test=False)
     all_candles = client.get_klines(timeframe="1h", limit=1000, days=30)
-    df = pd.DataFrame(all_candles.close, columns=['Close'])
-    df_close_time = pd.DataFrame(all_candles.closeTime, columns=['CloseTime'])
+    all_candles.plot_crossover(1, 2, units="days")
 
-    windowMin = 24 * 9  # 1h candles means 24 * 9 for 9-day window
-    windowMax = windowMin * 2
-    df['Short'] = df['Close'].rolling(window=windowMin).mean()  # 12hrs, first data point  # 9 days
-    df['Long'] = df['Close'].rolling(window=windowMax).mean()  # 36hrs                    # 18 days
-
-    epoch_to_date = lambda epoch: time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(epoch) / 1000))
-    df.index = df_close_time['CloseTime'].apply(epoch_to_date)
-
-    df.dropna(inplace=True)
-    df = df.astype(float)
-
-    df.plot()
-    plt.show()
+    print("Finished and exited")
