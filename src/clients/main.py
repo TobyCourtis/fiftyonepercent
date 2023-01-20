@@ -1,12 +1,14 @@
 import datetime
 import json
 import os
+import time
 from pprint import pprint
-import pandas as pd
-import matplotlib.pyplot as plt
 
+import matplotlib.pyplot as plt
+import pandas as pd
 from binance.error import ClientError
 from binance.spot import Spot
+
 from candlesticks import Candlesticks
 
 
@@ -196,15 +198,21 @@ class BinanceClient:
 
 
 if __name__ == "__main__":
-    client = BinanceClient(test=True)
-    foo = client.get_klines(timeframe="15m", limit=None, days=50)
-    df = pd.DataFrame(foo.close, columns=['Close'])
-    print(df)
-    df['Short'] = df['Close'].rolling(window=2*6*4).mean()
-    df['Long'] = df['Close'].rolling(window=3*12*4).mean()
+    client = BinanceClient(test=False)
+    all_candles = client.get_klines(timeframe="1h", limit=1000, days=30)
+    df = pd.DataFrame(all_candles.close, columns=['Close'])
+    df_close_time = pd.DataFrame(all_candles.closeTime, columns=['CloseTime'])
+
+    windowMin = 24 * 9  # 1h candles means 24 * 9 for 9-day window
+    windowMax = windowMin * 2
+    df['Short'] = df['Close'].rolling(window=windowMin).mean()  # 12hrs, first data point  # 9 days
+    df['Long'] = df['Close'].rolling(window=windowMax).mean()  # 36hrs                    # 18 days
+
+    epoch_to_date = lambda epoch: time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(epoch) / 1000))
+    df.index = df_close_time['CloseTime'].apply(epoch_to_date)
+
     df.dropna(inplace=True)
     df = df.astype(float)
-    print(df)
+
     df.plot()
     plt.show()
-    #foo.display_data()
