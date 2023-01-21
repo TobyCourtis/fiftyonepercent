@@ -96,12 +96,11 @@ class BinanceClient:
         symbol = "ETHUSDT" if self.test else "ETHGBP"  # only ETH supported for now
         print(self.client.ticker_price(symbol=symbol))
 
-    def get_klines(self, timeframe, limit, **kwargs) -> Candlesticks:
+    def get_klines(self, timeframe, **kwargs) -> Candlesticks:
         """
         This is the main marketplace data return function
 
         :param timeframe: the interval of candlestick, e.g 1s, 1m, 5m, 1h, 1d, etc.
-        :param limit: limit the no. candles returned Default 500; max 1000.
         :param kwargs: period of time to begin candles from time now minus,  e.g days=1, hours=0, weeks=0, minutes=0
         :return: Candlesticks object. Containing list of candles.
         """
@@ -109,26 +108,35 @@ class BinanceClient:
         startTime = (datetime.datetime.now() - datetime.timedelta(**kwargs)).timestamp() * 1000
 
         symbol = "ETHUSDT" if self.test else "ETHGBP"  # only ETH supported for now
-        klines = self.client.klines(interval=timeframe,
-                                    limit=limit,
-                                    symbol=symbol,
-                                    startTime=int(startTime),
-                                    endTime=int(timeNow))
 
+        gathered_all_klines = False
         all_candles = Candlesticks()
-        for kline in klines:
-            all_candles.openTime.append(kline[0])
-            all_candles.open.append(kline[1])
-            all_candles.high.append(kline[2])
-            all_candles.low.append(kline[3])
-            all_candles.close.append(kline[4])
-            all_candles.volume.append(kline[5])
-            all_candles.closeTime.append(kline[6])
-            all_candles.quoteAssetVolume.append(kline[7])
-            all_candles.numberOfTrades.append(kline[8])
-            all_candles.takerBuyBaseAssetVolume.append(kline[9])
-            all_candles.takerBuyQuoteAssetVolume.append(kline[10])
-            all_candles.ignore.append(kline[11])
+        while not gathered_all_klines:
+            klines = self.client.klines(interval=timeframe,
+                                        limit=1000,
+                                        symbol=symbol,
+                                        startTime=int(startTime),
+                                        endTime=int(timeNow))
+
+            for kline in klines:
+                all_candles.openTime.append(kline[0])
+                all_candles.open.append(kline[1])
+                all_candles.high.append(kline[2])
+                all_candles.low.append(kline[3])
+                all_candles.close.append(kline[4])
+                all_candles.volume.append(kline[5])
+                all_candles.closeTime.append(kline[6])
+                all_candles.quoteAssetVolume.append(kline[7])
+                all_candles.numberOfTrades.append(kline[8])
+                all_candles.takerBuyBaseAssetVolume.append(kline[9])
+                all_candles.takerBuyQuoteAssetVolume.append(kline[10])
+                all_candles.ignore.append(kline[11])
+
+            # check if API response limit met
+            if len(klines) < 1000:
+                gathered_all_klines = True
+            else:
+                startTime = all_candles.closeTime[-1]  # renew data pull from latest candle close time
         return all_candles
 
     def ticker_24h(self):
@@ -179,7 +187,7 @@ class BinanceClient:
 
 if __name__ == "__main__":
     client = BinanceClient(test=False)
-    all_candles = client.get_klines(timeframe="1h", limit=1000, days=30)
+    all_candles = client.get_klines(timeframe="1m", hours=16)  # hours = 17 gives 1020 candles
     all_candles.plot_crossover(1, 2, units="days")
 
     print("Finished and exited")
