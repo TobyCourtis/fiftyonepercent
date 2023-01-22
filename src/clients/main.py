@@ -6,7 +6,7 @@ from pprint import pprint
 from binance.error import ClientError
 from binance.spot import Spot
 
-from src.clients.candlesticks import Candlesticks
+from candlesticks import Candlesticks
 
 
 class BinanceClient:
@@ -22,8 +22,6 @@ class BinanceClient:
             key_path = os.path.dirname(__file__) + "/../keys/testnet-keys.json"
             base_url = "https://testnet.binance.vision"
         else:
-            input("\nYou are in production mode. Press any key to continue\n")
-
             key_path = os.path.dirname(__file__) + "/../keys/default-keys.json"
             base_url = "https://api.binance.com"
 
@@ -96,12 +94,11 @@ class BinanceClient:
         symbol = "ETHUSDT" if self.test else "ETHGBP"  # only ETH supported for now
         print(self.client.ticker_price(symbol=symbol))
 
-    def get_klines(self, timeframe, limit, **kwargs) -> Candlesticks:
+    def get_klines(self, timeframe, **kwargs) -> Candlesticks:
         """
         This is the main marketplace data return function
 
         :param timeframe: the interval of candlestick, e.g 1s, 1m, 5m, 1h, 1d, etc.
-        :param limit: limit the no. candles returned Default 500; max 1000.
         :param kwargs: period of time to begin candles from time now minus,  e.g days=1, hours=0, weeks=0, minutes=0
         :return: Candlesticks object. Containing list of candles.
         """
@@ -109,26 +106,36 @@ class BinanceClient:
         startTime = (datetime.datetime.now() - datetime.timedelta(**kwargs)).timestamp() * 1000
 
         symbol = "ETHUSDT" if self.test else "ETHGBP"  # only ETH supported for now
-        klines = self.client.klines(interval=timeframe,
-                                    limit=limit,
-                                    symbol=symbol,
-                                    startTime=int(startTime),
-                                    endTime=int(timeNow))
 
+        gathered_all_klines = False
         all_candles = Candlesticks()
-        for kline in klines:
-            all_candles.openTime.append(kline[0])
-            all_candles.open.append(kline[1])
-            all_candles.high.append(kline[2])
-            all_candles.low.append(kline[3])
-            all_candles.close.append(kline[4])
-            all_candles.volume.append(kline[5])
-            all_candles.closeTime.append(kline[6])
-            all_candles.quoteAssetVolume.append(kline[7])
-            all_candles.numberOfTrades.append(kline[8])
-            all_candles.takerBuyBaseAssetVolume.append(kline[9])
-            all_candles.takerBuyQuoteAssetVolume.append(kline[10])
-            all_candles.ignore.append(kline[11])
+        all_candles.timeframe = timeframe
+        while not gathered_all_klines:
+            klines = self.client.klines(interval=timeframe,
+                                        limit=1000,
+                                        symbol=symbol,
+                                        startTime=int(startTime),
+                                        endTime=int(timeNow))
+
+            for kline in klines:
+                all_candles.openTime.append(kline[0])
+                all_candles.open.append(kline[1])
+                all_candles.high.append(kline[2])
+                all_candles.low.append(kline[3])
+                all_candles.close.append(kline[4])
+                all_candles.volume.append(kline[5])
+                all_candles.closeTime.append(kline[6])
+                all_candles.quoteAssetVolume.append(kline[7])
+                all_candles.numberOfTrades.append(kline[8])
+                all_candles.takerBuyBaseAssetVolume.append(kline[9])
+                all_candles.takerBuyQuoteAssetVolume.append(kline[10])
+                all_candles.ignore.append(kline[11])
+
+            # check if API response limit met
+            if len(klines) < 1000:
+                gathered_all_klines = True
+            else:
+                startTime = all_candles.closeTime[-1]  # renew data pull from latest candle close time
         return all_candles
 
     def ticker_24h(self):
@@ -176,25 +183,10 @@ class BinanceClient:
         # TODO implement sell
         print("sell")
 
-    """
-    HELPER FUNCTIONS
-    """
-
-    def moving_average(self, klines):
-        """
-        Moving Average of candlesticks
-        :param klines: Candlesticks object
-        :return: Moving Average of the candles within Candlesticks object
-        """
-        # take klines and get avg of each kline
-        averages = []
-        for i in klines["Close"]:  # TODO change to e.g (O + H + L + C)/4
-            averages.append(float(i))
-        # add all averages and divide by num klines
-        return sum(averages) / len(averages)
-
 
 if __name__ == "__main__":
-    client = BinanceClient(test=True)
-    foo = client.get_klines(timeframe="15m", limit=8, days=1)
-    foo.display_data()
+    client = BinanceClient(test=False)
+    all_candles = client.get_klines(timeframe="1h", days=30)  # hours = 17 gives 1020 candles
+    all_candles.plot_crossover(2, 4, units="days")
+
+    print("Finished and exited")

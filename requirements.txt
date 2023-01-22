@@ -1,2 +1,5 @@
 binance-connector
 plotly
+matplotlib
+pandas
+numpy

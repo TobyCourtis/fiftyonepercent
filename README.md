@@ -12,4 +12,10 @@ This project features a main Python file housing a "BinanceClient" class which a
 
 
 ## External Docs
-[Binance API Documentation](https://binance-docs.github.io/apidocs) 
+[Binance API Documentation](https://binance-docs.github.io/apidocs)
+
+
+## Dependencies
+All dependencies should be included in the requirements.txt file
+
+`python3 -m pip install -r requirements.txt`
