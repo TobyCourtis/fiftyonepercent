@@ -81,25 +81,28 @@ class BinanceClient:
     """
 
     #This should pull a list of dicts showing info per coin in the holding
-    def position_risk(self, symbol=None):
-        position_risk = self.client.positionRisk()
-        data = []
-        for coin_info in position_risk:
-            coin_data = {}
-            coin_data['Symbol'] = coin_info['symbol']
-            coin_data['Position'] = coin_info['positionSide']
-            coin_data['Entry_Price'] = coin_info['entryPrice'] #Entry price I would expect to be the weighted average price of the orders
-            coin_data['Mark_Price'] = coin_info['markPrice']
-            coin_data['Average_Price'] = self.client.ticker_price(symbol=coin_info['symbol']) #added the live incase the mark price isn't current
-            coin_data['Unrealized_PnL'] = coin_info['unRealizedProfit'] #unrealised pnl is pnl on open positions and will be the diff between the entry point and mark price.
-            coin_data['Side'] = coin_info['positionSide'] #positionSide, one row for long and one for short
-            data.append(coin_data)
-        data = pd.DataFrame(data)
-        #return all data or just the symbol that was passed
-        if symbol:
-            return data[data['Symbol'] == symbol]
-        else:
-            return data
+    def position_risk(self, symbol_list=["ETHUSDT"]):
+        pnl_df = []
+        for symbol in symbol_list:
+            #I will add a seperate function for get trades as may need a loop
+            trade_history = self.client.my_trades(symbol=symbol)
+            live_px = self.client.ticker_price(symbol=symbol)
+            symbol_data = []
+            for trade_info in trade_history:
+                coin_data = {}
+                coin_data['Symbol'] = trade_info['symbol']
+                coin_data['qty'] = trade_info['qty'] if trade_info['isBuyer'] == True else trade_info['qty']*-1
+                coin_data['Price'] = trade_info['price']
+                coin_data['Fee'] = trade_info['commission']
+                coin_data['Side'] = 'Buy' if trade_info['isBuyer'] == True else 'Sell' #1 is buy and 0 Sell
+                coin_data['PnL'] = (live_px-trade_info['price'])*coin_data['qty']
+                symbol_data.append(coin_data)
+            symbol_data = pd.DataFrame(symbol_data)
+            symbol_data = symbol_data.groupby(['Symbol', 'Side']).sum()
+            symbol_data.set_index('Symbol', inplace=True)
+            pnl_df.appened(symbol_data)
+        pnl_df = pd.concat(pnl_df, axis=1)
+        return pnl_df
 
     """
     MARKET INFORMATION
