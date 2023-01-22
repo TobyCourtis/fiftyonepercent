@@ -2,6 +2,7 @@ import datetime
 import json
 import os
 from pprint import pprint
+import pandas as pd
 
 from binance.error import ClientError
 from binance.spot import Spot
@@ -76,6 +77,31 @@ class BinanceClient:
             )
 
     """
+    POSITION/PNL INFORMATION
+    """
+
+    #This should pull a list of dicts showing info per coin in the holding
+    def position_risk(self, symbol=None):
+        position_risk = self.client.positionRisk()
+        data = []
+        for coin_info in position_risk:
+            coin_data = {}
+            coin_data['Symbol'] = coin_info['symbol']
+            coin_data['Position'] = coin_info['positionSide']
+            coin_data['Entry_Price'] = coin_info['entryPrice'] #Entry price I would expect to be the weighted average price of the orders
+            coin_data['Mark_Price'] = coin_info['markPrice']
+            coin_data['Average_Price'] = self.client.ticker_price(symbol=coin_info['symbol']) #added the live incase the mark price isn't current
+            coin_data['Unrealized_PnL'] = coin_info['unRealizedProfit'] #unrealised pnl is pnl on open positions and will be the diff between the entry point and mark price.
+            coin_data['Side'] = coin_info['positionSide'] #positionSide, one row for long and one for short
+            data.append(coin_data)
+        data = pd.DataFrame(data)
+        #return all data or just the symbol that was passed
+        if symbol:
+            return data[data['Symbol'] == symbol]
+        else:
+            return data
+
+    """
     MARKET INFORMATION
     """
 
@@ -90,8 +116,7 @@ class BinanceClient:
         pprint(avg_price)
         return avg_price["price"]
 
-    def ticker_price(self):
-        symbol = "ETHUSDT" if self.test else "ETHGBP"  # only ETH supported for now
+    def ticker_price(self, symbol="ETHUSDT"):
         print(self.client.ticker_price(symbol=symbol))
 
     def get_klines(self, timeframe, **kwargs) -> Candlesticks:
