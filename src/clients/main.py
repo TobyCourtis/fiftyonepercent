@@ -186,6 +186,7 @@ class BinanceClient:
 
 if __name__ == "__main__":
     client = BinanceClient(test=False)
+
     all_candles = client.get_klines(timeframe="1h", days=30)  # hours = 17 gives 1020 candles
     all_candles.plot_crossover(2, 4, units="days")
 
