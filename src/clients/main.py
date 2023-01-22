@@ -22,8 +22,6 @@ class BinanceClient:
             key_path = os.path.dirname(__file__) + "/../keys/testnet-keys.json"
             base_url = "https://testnet.binance.vision"
         else:
-            input("\nYou are in production mode. Press any key to continue\n")
-
             key_path = os.path.dirname(__file__) + "/../keys/default-keys.json"
             base_url = "https://api.binance.com"
 
@@ -111,6 +109,7 @@ class BinanceClient:
 
         gathered_all_klines = False
         all_candles = Candlesticks()
+        all_candles.timeframe = timeframe
         while not gathered_all_klines:
             klines = self.client.klines(interval=timeframe,
                                         limit=1000,
@@ -187,7 +186,7 @@ class BinanceClient:
 
 if __name__ == "__main__":
     client = BinanceClient(test=False)
-    all_candles = client.get_klines(timeframe="1m", hours=16)  # hours = 17 gives 1020 candles
-    all_candles.plot_crossover(1, 2, units="days")
+    all_candles = client.get_klines(timeframe="1h", days=30)  # hours = 17 gives 1020 candles
+    all_candles.plot_crossover(2, 4, units="days")
 
     print("Finished and exited")
