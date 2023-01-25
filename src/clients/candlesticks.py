@@ -33,13 +33,11 @@ class Candlesticks:
     def display_all_candle_data(self):
         pprint(vars(self))
 
-    def minute_conversion_factor(self):
+    def number_candles_in_one_hour(self):
         match self.candleTimeframe[-1]:
             case "m":
                 amount = int(self.candleTimeframe[:-1])
-                return int(60 / amount)
-            case "d":
-                return 1
+                return int(60 / amount)  # 15m=4, 1m=60
             case "h":
                 return 1
             case _:
@@ -95,19 +93,23 @@ class Candlesticks:
         """
         main_df = pd.DataFrame(self.close, columns=['Close'])
         df_close_time = pd.DataFrame(self.closeTime, columns=['CloseTime'])
-        minute_conversion_factor = self.minute_conversion_factor()
+        number_candles_in_one_hour = self.number_candles_in_one_hour()
 
+        # convert window size into the smallest factor (hours)
         match units.lower():
             case "days":
-                conversion_factor = 24 * minute_conversion_factor  # 24h * 60 minutes (to match candle size in minutes)
+                window_min = 24 * window_min
+                window_max = 24 * window_max
             case "hours":
-                conversion_factor = 1 * minute_conversion_factor  # 1h * 60 minutes
+                pass  # already in hours
             case _:
                 raise Exception(f"Unit '{units}' is not supported yet!")
 
+        # adjust window size from hours to match intervals of 1m, 15m or 1h
+        window_min = window_min * number_candles_in_one_hour
+        window_max = window_max * number_candles_in_one_hour
+
         main_df.index = df_close_time['CloseTime'].apply(epoch_to_date)
-        window_min = window_min * conversion_factor
-        window_max = window_max * conversion_factor
         main_df['Short'] = main_df['Close'].rolling(window=window_min).mean()
         main_df['Long'] = main_df['Close'].rolling(window=window_max).mean()
         main_df['Signal'] = np.where(main_df['Short'] > main_df['Long'], 1.0, 0.0)
