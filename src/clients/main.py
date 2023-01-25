@@ -6,7 +6,7 @@ from pprint import pprint
 from binance.error import ClientError
 from binance.spot import Spot
 
-from candlesticks import Candlesticks
+from .candlesticks import Candlesticks
 
 
 class BinanceClient:

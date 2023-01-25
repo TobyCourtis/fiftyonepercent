@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from helpers import epoch_to_date
+from .helpers import epoch_to_date
 
 
 class Candlesticks:
@@ -54,7 +54,7 @@ class Candlesticks:
         :param units: units of window_min/max in days or hours
         :return: (void) Plots the MA crossover graph
         """
-        main_df = self.create_ma_crossover_dataframe(units, window_max, window_min)
+        main_df = self.create_ma_crossover_dataframe(window_min, window_max, units)
 
         # 'buy/sell' signals
         main_df['buy_sell_x'] = main_df['Position'].replace(0.0, np.NAN)
@@ -84,7 +84,7 @@ class Candlesticks:
         plt.legend()
         plt.show()
 
-    def create_ma_crossover_dataframe(self, units, window_max, window_min):
+    def create_ma_crossover_dataframe(self, window_min, window_max, units):
         """
         Creates dataframe housing MA Crossover information
 
@@ -115,6 +115,9 @@ class Candlesticks:
         main_df.dropna(inplace=True)
         main_df = main_df.astype(float)
         return main_df
+
+    def get_current_signal(self, dataframe):
+        return dataframe['Signal'].iloc[-1]
 
 
 if __name__ == "__main__":
