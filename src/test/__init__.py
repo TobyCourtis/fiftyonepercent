@@ -1,2 +1,2 @@
-from src.clients.helpers import *
-from src.clients.candlesticks import *
+from clients.helpers import *
+from clients.candlesticks import *
