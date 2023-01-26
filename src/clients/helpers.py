@@ -1,3 +1,4 @@
+import math
 import time
 
 """
@@ -21,5 +22,37 @@ def moving_average(klines):
     return sum(averages) / len(averages)
 
 
+def convert_to_hours(window_min, window_max, units):
+    match units.lower():
+        case "days":
+            window_min = 24 * window_min
+            window_max = 24 * window_max
+        case "hours":
+            pass  # already in hours
+        case _:
+            raise Exception(f"Unit '{units}' is not supported yet!")
+    return window_min, window_max
+
+
 # lamda to convert epoch (3 d.p) int to datetime string
-epoch_to_date = lambda epoch: time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(epoch) / 1000))
+# Important: Will round 14:03:59 > 14:04:00 for graph readability
+epoch_to_date = lambda epoch: time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(math.ceil(int(epoch) / 1000)))
+
+
+def bruce_buffer():
+    print(
+        """
+        |
+        |
+        |
+        |
+        |
+        |
+        |
+        |
+        |
+        |
+        |
+        |
+        """
+    )
