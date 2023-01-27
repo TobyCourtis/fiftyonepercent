@@ -1,7 +1,7 @@
 from notify.notifier import *
 import sys
-from clients.main import BinanceClient
-from clients.helpers import moving_average
+from src.clients.main import BinanceClient
+from src.clients.helpers import moving_average
 
 
 # first argument must be hourly OR daily

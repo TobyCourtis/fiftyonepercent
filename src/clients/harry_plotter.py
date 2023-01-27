@@ -4,7 +4,7 @@ from main import BinanceClient
 
 import time
 
-from candlesticks import Candlesticks
+from src.clients.candlesticks import Candlesticks
 
 
 def plot(candles: Candlesticks):
@@ -30,5 +30,5 @@ def plot(candles: Candlesticks):
 
 if __name__ == "__main__":
     client = BinanceClient(test=True)
-    foo = client.get_klines("15m", 8, days=1)
-    plot(foo)
+    candles = client.get_klines("15m", days=1)
+    plot(candles)

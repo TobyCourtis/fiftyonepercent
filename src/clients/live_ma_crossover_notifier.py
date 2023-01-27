@@ -2,7 +2,7 @@ import time
 
 from helpers import convert_to_hours, epoch_to_date, bruce_buffer
 from main import BinanceClient
-from . import slack_notify
+from src.notify.notifier import slack_notify
 
 
 def notify_ma_crossover(window_min, window_max, units):

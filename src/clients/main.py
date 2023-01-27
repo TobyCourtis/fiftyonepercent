@@ -7,7 +7,7 @@ import pandas as pd
 from binance.error import ClientError
 from binance.spot import Spot
 
-from .candlesticks import Candlesticks
+from src.clients.candlesticks import Candlesticks
 
 
 class BinanceClient:
