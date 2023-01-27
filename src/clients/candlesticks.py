@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 from pprint import pprint
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from .helpers import epoch_to_date
+from helpers import epoch_to_date, convert_to_hours
 
 
 class Candlesticks:
@@ -29,6 +31,9 @@ class Candlesticks:
         self.ignore = []
 
         self.candleTimeframe = "NONE"
+
+    def __len__(self):
+        return len(self.openTime)  # essentially equals No. candles
 
     def display_all_candle_data(self):
         pprint(vars(self))
@@ -89,21 +94,14 @@ class Candlesticks:
         :param window_min:  Short window size
         :param window_max:  Long window size
         :param units: units of window_min/max in days or hours
-        :return: (void) Plots the MA crossover graph
+        :return: MA Crossover dataframe
         """
         main_df = pd.DataFrame(self.close, columns=['Close'])
         df_close_time = pd.DataFrame(self.closeTime, columns=['CloseTime'])
         number_candles_in_one_hour = self.number_candles_in_one_hour()
 
         # convert window size into the smallest factor (hours)
-        match units.lower():
-            case "days":
-                window_min = 24 * window_min
-                window_max = 24 * window_max
-            case "hours":
-                pass  # already in hours
-            case _:
-                raise Exception(f"Unit '{units}' is not supported yet!")
+        window_min, window_max = convert_to_hours(window_min, window_max, units)
 
         # adjust window size from hours to match intervals of 1m, 15m or 1h
         window_min = window_min * number_candles_in_one_hour
@@ -112,14 +110,55 @@ class Candlesticks:
         main_df.index = df_close_time['CloseTime'].apply(epoch_to_date)
         main_df['Short'] = main_df['Close'].rolling(window=window_min).mean()
         main_df['Long'] = main_df['Close'].rolling(window=window_max).mean()
+        main_df.dropna(inplace=True)  # important to happen here or signal/position skewed
         main_df['Signal'] = np.where(main_df['Short'] > main_df['Long'], 1.0, 0.0)
         main_df['Position'] = main_df['Signal'].diff()
-        main_df.dropna(inplace=True)
         main_df = main_df.astype(float)
         return main_df
 
-    def get_current_signal(self, dataframe):
-        return dataframe['Signal'].iloc[-1]
+    def get_current_position(self, dataframe):
+        return dataframe['Position'].iloc[-1]
+
+    def add(self, candles: Candlesticks):
+        if self.closeTime[-1] > candles.openTime[0]:
+            raise Exception(f"Candlesticks being appended have open time before closing time of current candlesticks")
+        if self.candleTimeframe != candles.candleTimeframe:
+            raise Exception(
+                f"Cannot add candles with different timeframes ({self.candleTimeframe} and {candles.candleTimeframe}")
+
+        self.openTime += candles.openTime
+        self.open += candles.open
+        self.high += candles.high
+        self.low += candles.low
+        self.close += candles.close
+        self.volume += candles.volume
+        self.closeTime += candles.closeTime
+        self.quoteAssetVolume += candles.quoteAssetVolume
+        self.numberOfTrades += candles.numberOfTrades
+        self.takerBuyBaseAssetVolume += candles.takerBuyBaseAssetVolume
+        self.takerBuyQuoteAssetVolume += candles.takerBuyQuoteAssetVolume
+        self.ignore += candles.ignore
+
+    def shorten(self, limit=43_200):  # default to 30 days of candles in 1m intervals
+        if type(limit) is not int:
+            raise TypeError(f"Expected integer to shorten candles to but received '{type(limit)}'")
+        if limit < 1:
+            raise ValueError(f"Limit '{limit}' is not a valid positive integer to shorten the candle length to.")
+        if len(self) <= limit:
+            pass  # no need to shorten
+        else:
+            self.openTime = self.openTime[-limit:]
+            self.open = self.open[-limit:]
+            self.high = self.high[-limit:]
+            self.low = self.low[-limit:]
+            self.close = self.close[-limit:]
+            self.volume = self.volume[-limit:]
+            self.closeTime = self.closeTime[-limit:]
+            self.quoteAssetVolume = self.quoteAssetVolume[-limit:]
+            self.numberOfTrades = self.numberOfTrades[-limit:]
+            self.takerBuyBaseAssetVolume = self.takerBuyBaseAssetVolume[-limit:]
+            self.takerBuyQuoteAssetVolume = self.takerBuyQuoteAssetVolume[-limit:]
+            self.ignore = self.ignore[-limit:]
 
 
 if __name__ == "__main__":

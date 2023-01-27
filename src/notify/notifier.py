@@ -22,9 +22,6 @@ def slack_notify(text, channel='kingslanding'):
                   data=json.dumps(slack_payload))
 
 
-# google_mini_notify("stonks are through the roof right now!")
-# slack_notify("test")
-#test
-
 if __name__ == "__main__":
+    # google_mini_notify("stonks are through the roof right now!")
     slack_notify("Bot test", "crypto-trading")

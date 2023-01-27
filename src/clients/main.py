@@ -32,7 +32,7 @@ class BinanceClient:
             API_SECRET = keys["API_SECRET"]
 
         self.client = Spot(key=API_KEY, secret=API_SECRET, base_url=base_url)
-        print(f"Initialised with test mode: {test}")
+        print(f"Initialised BinanceClient with test mode: {test}")
 
     """
     MISC
@@ -133,7 +133,7 @@ class BinanceClient:
     def ticker_price(self, symbol="ETHUSDT"):
         print(self.client.ticker_price(symbol=symbol))
 
-    def get_klines(self, timeframe, **kwargs) -> Candlesticks:
+    def get_klines(self, timeframe="1m", **kwargs) -> Candlesticks:
         """
         This is the main marketplace data return function
 
@@ -142,14 +142,22 @@ class BinanceClient:
         :return: Candlesticks object. Containing list of candles.
         """
         timeNow = datetime.datetime.now().timestamp() * 1000
-        startTime = (datetime.datetime.now() - datetime.timedelta(**kwargs)).timestamp() * 1000
+        if "startTime" in kwargs:
+            startTime = kwargs['startTime']
+        else:
+            startTime = (datetime.datetime.now() - datetime.timedelta(**kwargs)).timestamp() * 1000
 
         symbol = "ETHUSDT" if self.test else "ETHGBP"  # only ETH supported for now
 
         gathered_all_klines = False
         all_candles = Candlesticks()
-        all_candles.timeframe = timeframe
+        all_candles.candleTimeframe = timeframe
+
+        call_count = 1
         while not gathered_all_klines:
+            print(f"Candle API call count: {call_count}")
+            call_count += 1
+
             klines = self.client.klines(interval=timeframe,
                                         limit=1000,
                                         symbol=symbol,
@@ -225,8 +233,7 @@ class BinanceClient:
 
 if __name__ == "__main__":
     client = BinanceClient(test=False)
-
-    all_candles = client.get_klines(timeframe="1h", days=30)  # hours = 17 gives 1020 candles
+    all_candles = client.get_klines(timeframe="1m", days=6)
     all_candles.plot_crossover(2, 4, units="days")
 
     print("Finished and exited")
