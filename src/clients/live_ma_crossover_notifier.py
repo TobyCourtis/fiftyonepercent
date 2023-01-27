@@ -8,6 +8,12 @@ from . import slack_notify
 def notify_ma_crossover(window_min, window_max, units):
     """
 
+    Main function to notify in the case of a MA crossover.
+    - Gets as many candles as required for window_max
+    - Keeps fetching each minute for new 1m interval candles
+    - Generates dataframe for current candles
+    - Notifies if position is buy or sell (also prints tail of current dataframe)
+
     :param window_min:  Short window size
     :param window_max:  Long window size
     :param units: units of window_min/max in days or hours
