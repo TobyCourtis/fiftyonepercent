@@ -2,6 +2,7 @@ import datetime
 import json
 import os
 from pprint import pprint
+import pandas as pd
 
 from binance.error import ClientError
 from binance.spot import Spot
@@ -76,6 +77,45 @@ class BinanceClient:
             )
 
     """
+    POSITION/PNL INFORMATION
+    """
+
+    #This should pull a list of dicts showing info per coin in the holding
+    def position_risk(self, symbol_list=["ETHUSDT"]):
+        """
+
+        Function to return the position and PnL of each coin holding
+
+        :param symbol_list: list of coins that you want included in the report
+        :return: Dataframe showing the coins in the index and pnl in the columns. DF will include WAP.
+        """
+
+
+        pnl_df = []
+        for symbol in symbol_list:
+            #I will add a seperate function for get trades as may need a loop
+            trade_history = self.client.my_trades(symbol=symbol)
+            live_px = self.client.ticker_price(symbol=symbol)
+            symbol_data = []
+            for trade_info in trade_history:
+                coin_data = {}
+                coin_data['Symbol'] = trade_info['symbol']
+                coin_data['qty'] = trade_info['qty'] if trade_info['isBuyer'] == True else trade_info['qty']*-1
+                coin_data['WAP'] = trade_info['price']*trade_info['qty']
+                coin_data['Fee'] = trade_info['commission']
+                coin_data['Side'] = 'Buy' if trade_info['isBuyer'] == True else 'Sell' #1 is buy and 0 Sell
+                coin_data['PnL'] = ((live_px-trade_info['price'])*coin_data['qty']) - trade_info['commission']
+                symbol_data.append(coin_data)
+            symbol_data = pd.DataFrame(symbol_data)
+            symbol_data = symbol_data.groupby(['Symbol', 'Side']).sum()
+            symbol_data['WAP'] = abs(symbol_data['WAP']/symbol_data['qty'])
+            symbol_data.set_index('Symbol', inplace=True)
+            pnl_df.append(symbol_data)
+            #Once tested with real data this can be made nicer with summary per coin
+        pnl_df = pd.concat(pnl_df, axis=1)
+        return pnl_df
+
+    """
     MARKET INFORMATION
     """
 
@@ -90,8 +130,7 @@ class BinanceClient:
         pprint(avg_price)
         return avg_price["price"]
 
-    def ticker_price(self):
-        symbol = "ETHUSDT" if self.test else "ETHGBP"  # only ETH supported for now
+    def ticker_price(self, symbol="ETHUSDT"):
         print(self.client.ticker_price(symbol=symbol))
 
     def get_klines(self, timeframe, **kwargs) -> Candlesticks:
@@ -186,6 +225,7 @@ class BinanceClient:
 
 if __name__ == "__main__":
     client = BinanceClient(test=False)
+
     all_candles = client.get_klines(timeframe="1h", days=30)  # hours = 17 gives 1020 candles
     all_candles.plot_crossover(2, 4, units="days")
 
