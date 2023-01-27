@@ -2,6 +2,7 @@ import time
 
 from helpers import convert_to_hours, epoch_to_date, bruce_buffer
 from main import BinanceClient
+from . import slack_notify
 
 
 def notify_ma_crossover(window_min, window_max, units):
@@ -43,8 +44,16 @@ def notify_ma_crossover(window_min, window_max, units):
 
         if signal == 1:
             print('\n!notify buy!\n')
+            latest_row = ma_crossover_dataframe.iloc[-1]
+            slack_notify(
+                f"Buy buy buy. Time={latest_row.name}, Short={latest_row['Short']}, Long={latest_row['Long']}, "
+                f"windowMin={window_min}, windowMax={window_max}, units={units}", "crypto-trading")
         elif signal == -1:
             print('\nnotify sell\n')
+            latest_row = ma_crossover_dataframe.iloc[-1]
+            slack_notify(
+                f"Sell sell sell. Time={latest_row.name}, Short={latest_row['Short']}, Long={latest_row['Long']}, "
+                f"windowMin={window_min}, windowMax={window_max}, units={units}", "crypto-trading")
         else:
             print('\nDo not buy or sell\n')
             pass

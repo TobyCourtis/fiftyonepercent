@@ -5,3 +5,5 @@ sys.path.append(os.path.dirname(os.path.realpath(__file__)))  # required for uni
 from . import main
 from . import helpers
 from . import candlesticks
+
+from notify.notifier import slack_notify

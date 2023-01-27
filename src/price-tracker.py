@@ -1,5 +1,5 @@
 from clients.main import *
-from notify.notify import *
+from notify.notifier import *
 import sys
 from clients.main import BinanceClient
 
