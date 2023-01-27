@@ -23,7 +23,7 @@ All dependencies should be included in the requirements.txt file
 ## Running locally
 It is recommended to run the following to allow running as a module globally in the terminal:
 
-`export PYTHONPATH="${PYTHONPATH}:/home/users/fiftyonepercent/src"`
+`export PYTHONPATH="${PYTHONPATH}:/home/users/your_user/fiftyonepercent/src"`
 
 This will allow the following to be executed globally:
 
