@@ -21,13 +21,13 @@ All dependencies should be included in the requirements.txt file
 `python3 -m pip install -r requirements.txt`
 
 ## Running locally
-It is recommended to run the following to allow running as a module globally in the terminal:
+Due to our import structure you must run this from the project ROOT before using our Python files:
 
-`export PYTHONPATH="${PYTHONPATH}:/home/users/your_user/fiftyonepercent"`
+`export PYTHONPATH="${PYTHONPATH}:$(pwd)"`
 
-This will allow the following to be executed globally:
+To verify the project root is in your PYTHONPATH run the following:
 
-`python3.10 -m clients.live_ma_crossover_notifier`
+`python3.10 -c 'import sys; print(sys.path)' | grep "/fiftyonepercent'"`
 
 ## Testing
 
