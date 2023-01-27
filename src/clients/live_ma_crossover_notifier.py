@@ -36,6 +36,8 @@ def notify_ma_crossover(window_min, window_max, units):
 
         all_candles.shorten()  # shorten candles to past 30 days of data
 
+        # TODO we waste time computing entire dataframe everytime candles are added, functionality just to compute
+        #  the newest data point would be optimal
         ma_crossover_dataframe = all_candles.create_ma_crossover_dataframe(window_min, window_max, units)
         print("\nLatest MA crossover data:")
         print(ma_crossover_dataframe.tail())
