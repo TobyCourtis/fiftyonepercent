@@ -19,7 +19,6 @@ def notify_ma_crossover(window_min, window_max, units):
     _, window_max_in_hours = convert_to_hours(window_min, window_max, units)
     all_candles = client.get_klines(hours=window_max_in_hours)
 
-    production_run = True
     while True:
         new_start_time = all_candles.closeTime[-1]  # start from last candle closing time
         print(f"\nFetching new candles with start time: {epoch_to_date(new_start_time)}\n")
