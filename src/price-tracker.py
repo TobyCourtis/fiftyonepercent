@@ -1,41 +1,44 @@
-from clients.main import *
 from notify.notifier import *
 import sys
 from clients.main import BinanceClient
+from clients.helpers import moving_average
 
 
-# price tracker
-# first parameter must be hourly,daily,monthly
+# first argument must be hourly OR daily
 
-def notify_up(timeframe, change):
-    msg = f"{timeframe}: Ethereum is up {round(change, 1)} percent "
+def notify_up(timeframe, change, avg_price):
+    msg = f"{timeframe}: Ethereum is up {round(change, 1)} percent at {round(avg_price, 1)}"
     print(msg)
-    google_mini_notify(msg)
+    # google_mini_notify(msg)
     slack_notify(msg)
 
 
-def notify_down(timeframe, change):
-    msg = f"{timeframe}: Ethereum is down {round(change, 1)} percent."
+def notify_down(timeframe, change, avg_price):
+    msg = f"{timeframe}: Ethereum is down {round(change, 1)} percent at {round(avg_price, 1)}"
     print(msg)
-    google_mini_notify(msg)
+    # google_mini_notify(msg)
     slack_notify(msg)
 
 
 if __name__ == "__main__":
     binance_client = BinanceClient(test=False)
-    
     if sys.argv[1] == "daily":
-        MA = binance_client.moving_average(binance_client.get_klines("15m", 8, days=1))
-        perc_change = (float(binance_client.avg_price()) / MA * 100) - 100
+        MA = moving_average(binance_client.get_klines("15m", days=1),
+                            limit=8)  # look at 2-hour period 1 day ago
+        average_price = float(binance_client.avg_price())
+        perc_change = (average_price / MA * 100) - 100
         if perc_change > 0:
-            notify_up("Daily", perc_change)
+            notify_up("Daily", perc_change, average_price)
         else:
-            notify_down("Daily", perc_change)
+            notify_down("Daily", perc_change, average_price)
 
     elif sys.argv[1] == "hourly":
-        MA = binance_client.moving_average(binance_client.get_klines("1m", 20, minutes=70))
-        perc_change = (float(binance_client.avg_price()) / MA * 100) - 100
+        MA = moving_average(binance_client.get_klines("1m", minutes=70),
+                            limit=20)  # look at 20-minute period 1h10m ago
+        average_price = float(binance_client.avg_price())
+        perc_change = (average_price / MA * 100) - 100
+
         if perc_change > 0:
-            notify_up("Hourly", perc_change)
+            notify_up("Hourly", perc_change, average_price)
         else:
-            notify_down("Hourly", perc_change)
+            notify_down("Hourly", perc_change, average_price)

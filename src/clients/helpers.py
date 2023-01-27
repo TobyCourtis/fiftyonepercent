@@ -8,15 +8,19 @@ The opposite of Sam Stratton functions
 """
 
 
-def moving_average(klines):
+def moving_average(klines, limit=None):
     """
     Moving Average of candlesticks
     :param klines: Candlesticks object
     :return: Moving Average of the candles within Candlesticks object
     """
+    close_prices = klines.close
+    if limit is not None:
+        close_prices = close_prices[:limit]
+
     # take klines and get avg of each kline
     averages = []
-    for i in klines["Close"]:  # TODO change to e.g (O + H + L + C)/4
+    for i in close_prices:  # TODO change to e.g (O + H + L + C)/4
         averages.append(float(i))
     # add all averages and divide by num klines
     return sum(averages) / len(averages)
