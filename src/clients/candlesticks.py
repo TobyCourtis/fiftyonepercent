@@ -139,6 +139,27 @@ class Candlesticks:
         self.takerBuyQuoteAssetVolume += candles.takerBuyQuoteAssetVolume
         self.ignore += candles.ignore
 
+    def shorten(self, limit=43_200):  # default to 30 days of candles in 1m intervals
+        if type(limit) is not int:
+            raise TypeError(f"Expected integer to shorten candles to but received '{type(limit)}'")
+        if limit < 1:
+            raise ValueError(f"Limit '{limit}' is not a valid positive integer to shorten the candle length to.")
+        if len(self) <= limit:
+            pass  # no need to shorten
+        else:
+            self.openTime = self.openTime[-limit:]
+            self.open = self.open[-limit:]
+            self.high = self.high[-limit:]
+            self.low = self.low[-limit:]
+            self.close = self.close[-limit:]
+            self.volume = self.volume[-limit:]
+            self.closeTime = self.closeTime[-limit:]
+            self.quoteAssetVolume = self.quoteAssetVolume[-limit:]
+            self.numberOfTrades = self.numberOfTrades[-limit:]
+            self.takerBuyBaseAssetVolume = self.takerBuyBaseAssetVolume[-limit:]
+            self.takerBuyQuoteAssetVolume = self.takerBuyQuoteAssetVolume[-limit:]
+            self.ignore = self.ignore[-limit:]
+
 
 if __name__ == "__main__":
     foo = Candlesticks()

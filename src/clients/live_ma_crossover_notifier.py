@@ -34,20 +34,22 @@ def notify_ma_crossover(window_min, window_max, units):
 
         all_candles.add(new_candles)
 
+        all_candles.shorten()  # shorten candles to past 30 days of data
+
         ma_crossover_dataframe = all_candles.create_ma_crossover_dataframe(window_min, window_max, units)
         print("\nLatest MA crossover data:")
         print(ma_crossover_dataframe.tail())
         print("\n")
 
-        signal = all_candles.get_current_position(ma_crossover_dataframe)
+        position = all_candles.get_current_position(ma_crossover_dataframe)
 
-        if signal == 1:
+        if position == 1:
             print('\n!notify buy!\n')
             latest_row = ma_crossover_dataframe.iloc[-1]
             slack_notify(
                 f"Buy buy buy. Time={latest_row.name}, Short={latest_row['Short']}, Long={latest_row['Long']}, "
                 f"windowMin={window_min}, windowMax={window_max}, units={units}", "crypto-trading")
-        elif signal == -1:
+        elif position == -1:
             print('\nnotify sell\n')
             latest_row = ma_crossover_dataframe.iloc[-1]
             slack_notify(
@@ -57,13 +59,11 @@ def notify_ma_crossover(window_min, window_max, units):
             print('\nDo not buy or sell\n')
             pass
 
-        # TODO shorten the candlesticks object or, it will keep growing forever
-
         # TODO every 10 minutes send photo of graph to slack
 
-        # TODO| breakpoints or fetch times could cause the wait to be more than 1 minute
-        # TODO| if multiple candles have been released then we need to check all of the
-        # TODO| corresponding ma_crossover_dataframe rows for 'Position' buy or sell
+        # TODO breakpoints or fetch times could cause the wait to be more than 1 minute
+        #  if multiple candles have been released then we need to check all of the
+        #  corresponding ma_crossover_dataframe rows for 'Position' buy or sell
 
         print("\nWaiting 1 minute for new candles ...")
         time.sleep(60)

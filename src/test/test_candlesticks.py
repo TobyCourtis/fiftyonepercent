@@ -5,7 +5,67 @@ import pandas as pd
 from . import Candlesticks
 
 
+def variable_length_candlesticks(length):
+    candles = Candlesticks()
+
+    values = [i for i in range(1, length + 1)]
+
+    candles.openTime += values
+    candles.open += values
+    candles.high += values
+    candles.low += values
+    candles.close += values
+    candles.volume += values
+    candles.closeTime += values
+    candles.quoteAssetVolume += values
+    candles.numberOfTrades += values
+    candles.takerBuyBaseAssetVolume += values
+    candles.takerBuyQuoteAssetVolume += values
+    candles.ignore += values
+    return candles
+
+
+def some_candle():
+    return variable_length_candlesticks(1)
+
+
 class TestCandlesticks(unittest.TestCase):
+
+    def test_shorten_candles_success(self):
+        candles = variable_length_candlesticks(10)
+
+        required_length = 3
+        candles.shorten(required_length)
+
+        self.assertEqual(len(candles), required_length)
+        self.assertEqual(candles.open, [8, 9, 10])
+
+    def test_shorten_candles_does_not_shorten_if_less_than_limit(self):
+        starting_length = 3
+        candles = variable_length_candlesticks(starting_length)
+
+        required_length = 5
+        candles.shorten(required_length)
+
+        self.assertEqual(len(candles), starting_length)
+        self.assertEqual(candles.open, [1, 2, 3])
+
+    def test_shorten_fails_with_negative_value(self):
+        starting_length = 5
+        candles = variable_length_candlesticks(starting_length)
+
+        required_length = -5
+
+        self.assertRaises(ValueError, candles.shorten, required_length)
+
+    def test_shorten_fails_if_non_int_passed(self):
+        starting_length = 5
+        candles = variable_length_candlesticks(starting_length)
+
+        required_length = "blah"
+
+        self.assertRaises(TypeError, candles.shorten, required_length)
+
     def test_diff_up(self):
         df = pd.DataFrame([[0], [1]], columns=['Signal'])
 
@@ -38,24 +98,18 @@ class TestCandlesticks(unittest.TestCase):
 
     def test_add_candles(self):
         candles1 = Candlesticks()
-        candles1.closeTime += [1]
+        candles1.closeTime += [0]
 
-        candles2 = self.some_candle()
+        candles2 = some_candle()
         candles1.add(candles2)
 
-        self.assertEqual(candles1.closeTime, [1, 2])
-
-    def some_candle(self):
-        candles2 = Candlesticks()
-        candles2.openTime += [1]
-        candles2.closeTime += [2]
-        return candles2
+        self.assertEqual(candles1.closeTime, [0, 1])
 
     def test_add_candles_with_invalid_start_date_throws_exception(self):
         candles1 = Candlesticks()
         candles1.closeTime += [5]  # later closing time
 
-        candles2 = self.some_candle()
+        candles2 = some_candle()
 
         self.assertRaises(Exception, candles1.add, candles2)
 
@@ -64,7 +118,7 @@ class TestCandlesticks(unittest.TestCase):
         candles1.closeTime += [1]
         candles1.candleTimeframe = "FOO"
 
-        candles2 = self.some_candle()
+        candles2 = some_candle()
         candles2.candleTimeframe = "BAR"
 
         self.assertRaises(Exception, candles1.add, candles2)
