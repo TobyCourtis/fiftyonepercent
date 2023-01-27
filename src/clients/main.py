@@ -1,16 +1,17 @@
 import datetime
+import datetime as dt
 import json
 import os
 from pprint import pprint
-import pandas as pd
-import datetime as dt
-import numpy as np
 
+import numpy as np
+import pandas as pd
 from binance.error import ClientError
 from binance.spot import Spot
 
 from src.clients.candlesticks import Candlesticks
 from src.clients.helpers import Side
+
 
 class BinanceClient:
     def __init__(self, **kwargs):
@@ -82,7 +83,6 @@ class BinanceClient:
     POSITION/PNL INFORMATION
     """
 
-    #This should pull a list of dicts showing info per coin in the holding
     def position_risk(self, symbol_list=["ETHUSDT"]):
         """
 
@@ -94,24 +94,27 @@ class BinanceClient:
 
         pnl_df = []
         for symbol in symbol_list:
-            #I will add a seperate function for get trades as may need a loop
             trade_history = self.client.my_trades(symbol=symbol)
             live_px = float(self.client.ticker_price(symbol=symbol)['price'])
             symbol_data = []
             for trade_info in trade_history:
                 coin_data = {}
                 coin_data['Symbol'] = trade_info['symbol']
-                coin_data['qty'] = float(trade_info['qty']) if trade_info['isBuyer'] == True else float(trade_info['qty'])*-1
-                coin_data['WAP'] = float(trade_info['price'])*float(trade_info['qty'])
+                coin_data['qty'] = float(trade_info['qty']) if trade_info['isBuyer'] == True else float(
+                    trade_info['qty']) * -1
+                coin_data['WAP'] = float(trade_info['price']) * float(trade_info['qty'])
                 coin_data['Fee'] = float(trade_info['commission'])
-                coin_data['Side'] = 'Buy' if trade_info['isBuyer'] == True else 'Sell' #1 is buy and 0 Sell
-                coin_data['PnL'] = ((live_px-float(trade_info['price']))*float(coin_data['qty'])) - float(trade_info['commission'])
+                coin_data['Side'] = 'Buy' if trade_info['isBuyer'] == True else 'Sell'  # 1 is buy and 0 Sell
+                coin_data['PnL'] = ((live_px - float(trade_info['price'])) * float(coin_data['qty'])) - float(
+                    trade_info['commission'])
                 symbol_data.append(coin_data)
             symbol_data = pd.DataFrame(symbol_data)
             symbol_data = symbol_data.groupby(['Symbol', 'Side']).sum()
-            symbol_data['WAP'] = abs(symbol_data['WAP']/symbol_data['qty'])
+            symbol_data['WAP'] = abs(symbol_data['WAP'] / symbol_data['qty'])
             symbol_data.reset_index(inplace=True)
-            total_df = pd.DataFrame([symbol, 'Total', symbol_data.qty.sum(), np.nan, symbol_data.Fee.sum(), symbol_data.PnL.sum()], index=symbol_data.columns).T
+            total_df = pd.DataFrame(
+                [symbol, 'Total', symbol_data.qty.sum(), np.nan, symbol_data.Fee.sum(), symbol_data.PnL.sum()],
+                index=symbol_data.columns).T
             symbol_data = symbol_data.append(total_df)
             pnl_df.append(symbol_data)
 
@@ -199,6 +202,7 @@ class BinanceClient:
     """
     TRADE FUNCTIONS
     """
+
     def market_order(self, symbol, side: Side, qty: float):
 
         if not self.test:
@@ -220,15 +224,16 @@ class BinanceClient:
 
         try:
             response = self.client.new_order(**params)
-            #print(response)
-            #Notify the below to slack
-            print("Order filled - qty: %s price: %s"%(response['fills'][0]['qty'], response['fills'][0]['price']))
+            # print(response)
+            # Notify the below to slack
+            print("Order filled - qty: %s price: %s" % (response['fills'][0]['qty'], response['fills'][0]['price']))
         except ClientError as error:
             print(
                 "Found error. status: {}, error code: {}, error message: {}".format(
                     error.status_code, error.error_code, error.error_message
                 )
             )
+
 
 if __name__ == "__main__":
     client = BinanceClient(test=True)
@@ -237,6 +242,3 @@ if __name__ == "__main__":
     # all_candles = client.get_klines(timeframe="1m", days=6)
     # all_candles.plot_crossover(2, 4, units="days")
     print("Finished and exited")
-
-
-
