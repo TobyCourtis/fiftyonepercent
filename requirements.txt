@@ -1,4 +1,4 @@
-binance-connector
+binance-connector==1.18.0
 plotly
 matplotlib
 pandas
