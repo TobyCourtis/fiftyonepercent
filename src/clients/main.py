@@ -199,7 +199,7 @@ class BinanceClient:
     """
     TRADE FUNCTIONS
     """
-    def martket_order(self, symbol, side: Side, qty: float):
+    def market_order(self, symbol, side: Side, qty: float):
 
         if not self.test:
             print("Buying is disabled outside of test mode")
@@ -232,7 +232,7 @@ class BinanceClient:
 
 if __name__ == "__main__":
     client = BinanceClient(test=True)
-    client.martket_order("ETHUSDT", Side.sell, 1)
+    client.market_order("ETHUSDT", Side.sell, 1)
     print(client.position_risk())
     # all_candles = client.get_klines(timeframe="1m", days=6)
     # all_candles.plot_crossover(2, 4, units="days")
