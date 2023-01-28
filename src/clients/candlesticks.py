@@ -120,7 +120,7 @@ class Candlesticks:
         # return the latest non 0 within values within a time frame
         match self.candleTimeframe:
             case "1m":
-                look_back_window = 10 #10 minute look back window for signals, Check the last signal.
+                look_back_window = 10  # 10 minute look back window for signals, Check the last signal.
             case "15m":
                 look_back_window = 1
             case "1h":

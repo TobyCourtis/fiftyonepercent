@@ -53,25 +53,52 @@ def notify_ma_crossover(window_min, window_max, units):
         qty = client.get_market_position()
 
         if (position == 1) & (qty == 0):
-            print('\n!notify buy!\n')
+            # Buy signal + no position on coin. Okay to buy. Make Trade add stop signal.
             latest_row = ma_crossover_dataframe.iloc[-1]
             slack_notify(
-                f"Buy Signal - Order Executed. Time={latest_row.name}, Short={latest_row['Short']}, Long={latest_row['Long']}, "
-                f"windowMin={window_min}, windowMax={window_max}, units={units}", "crypto-trading")
+                f"Buy Signal - Order Executed. "
+                f"Time={latest_row.name}, "
+                f"Short={latest_row['Short']}, "
+                f"Long={latest_row['Long']}, "
+                f"windowMin={window_min}, "
+                f"windowMax={window_max}, "
+                f"units={units}",
+                "crypto-trading")
         elif (position == -1) & (qty > 0):
-            print('\nnotify sell\n')
+            # Sell signal + position on coin. Okay to sell. Make Trade and clear stop signal.
             latest_row = ma_crossover_dataframe.iloc[-1]
             slack_notify(
-                f"Sell Signal - Order Executed. Time={latest_row.name}, Short={latest_row['Short']}, Long={latest_row['Long']}, "
-                f"windowMin={window_min}, windowMax={window_max}, units={units}", "crypto-trading")
+                f"Sell Signal - Order Executed. "
+                f"Time={latest_row.name}, "
+                f"Short={latest_row['Short']}, "
+                f"Long={latest_row['Long']}, "
+                f"windowMin={window_min}, "
+                f"windowMax={window_max}, "
+                f"units={units}",
+                "crypto-trading")
+
         elif (position == 1) & (qty > 0.0005):
+            # Buy signal + position on coin. Don't buy more, previous sell missed and stop not hit. Wait for next sell.
             slack_notify(
-                f"Buy Signal - Not Executed. Qty greater than 0 Already. Time={latest_row.name}, Short={latest_row['Short']}, Long={latest_row['Long']}, "
-                f"windowMin={window_min}, windowMax={window_max}, units={units}", "crypto-trading")
+                f"Buy Signal - Not Executed. Qty greater than 0 Already. "
+                f"Time={latest_row.name}, "
+                f"Short={latest_row['Short']}, "
+                f"Long={latest_row['Long']}, "
+                f"windowMin={window_min}, "
+                f"windowMax={window_max}, "
+                f"units={units}",
+                "crypto-trading")
         elif (position == -1) & (qty == 0):
+            # Sell signal + no position on coin. Don't sell and go short. Previous buy missed, wait for the next.
             slack_notify(
-                f"Sell Signal - Not Executed. Qty 0 Already. Time={latest_row.name}, Short={latest_row['Short']}, Long={latest_row['Long']}, "
-                f"windowMin={window_min}, windowMax={window_max}, units={units}", "crypto-trading")
+                f"Sell Signal - Not Executed. Qty 0 Already. "
+                f"Time={latest_row.name}, "
+                f"Short={latest_row['Short']}, "
+                f"Long={latest_row['Long']}, "
+                f"windowMin={window_min}, "
+                f"windowMax={window_max}, "
+                f"units={units}",
+                "crypto-trading")
         else:
             print('\nNo Signal - Do not buy or sell\n')
             pass

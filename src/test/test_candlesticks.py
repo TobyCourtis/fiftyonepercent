@@ -66,8 +66,8 @@ class TestCandlesticks(unittest.TestCase):
 
         self.assertRaises(TypeError, candles.shorten, required_length)
 
-    def test_position_1m_(self):
-        df = pd.DataFrame([[0], [1]], columns=['Signal'])
+    def test_position_1m_buy(self):
+        df = pd.DataFrame([[0], [0], [0], [1]], columns=['Position'])
 
         candles = Candlesticks()
         candles.candleTimeframe = '1m'
