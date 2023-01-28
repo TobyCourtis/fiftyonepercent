@@ -3,3 +3,4 @@ plotly
 matplotlib
 pandas
 numpy
+slack-sdk>=3.12,<4

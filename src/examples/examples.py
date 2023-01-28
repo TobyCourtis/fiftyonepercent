@@ -8,10 +8,10 @@ from src.clients.binance_client import BinanceClient
 from src.clients.helpers import Side
 
 
-def plot_ma_crossover():
+def create_ma_crossover():
     client = BinanceClient(test=False)
     all_candles = client.get_klines(timeframe="1m", days=6)
-    all_candles.plot_crossover(2, 4, units="days")
+    all_candles.create_crossover_graph(2, 4, units="days")
 
 
 def place_testnet_market_order():
@@ -26,4 +26,4 @@ def report_summary_position_risk():
 
 
 if __name__ == "__main__":
-    plot_ma_crossover()
+    create_ma_crossover()
