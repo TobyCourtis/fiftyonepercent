@@ -1,4 +1,4 @@
-from notify.notifier import *
+from notify import notifier
 import sys
 from src.clients.binance_client import BinanceClient
 from src.clients.helpers import moving_average
@@ -10,14 +10,14 @@ def notify_up(timeframe, change, avg_price):
     msg = f"{timeframe}: Ethereum is up {round(change, 1)} percent at {round(avg_price, 1)}"
     print(msg)
     # google_mini_notify(msg)
-    slack_notify(msg, channel='crypto-trading')
+    notifier.slack_notify(msg, channel='crypto-trading')
 
 
 def notify_down(timeframe, change, avg_price):
     msg = f"{timeframe}: Ethereum is down {round(change, 1)} percent at {round(avg_price, 1)}"
     print(msg)
     # google_mini_notify(msg)
-    slack_notify(msg, channel='crypto-trading')
+    notifier.slack_notify(msg, channel='crypto-trading')
 
 
 if __name__ == "__main__":
