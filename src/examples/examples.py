@@ -10,19 +10,19 @@ from src.clients.helpers import Side
 
 def create_ma_crossover():
     client = BinanceClient(test=False)
-    all_candles = client.get_klines(timeframe="1m", days=6)
-    all_candles.create_crossover_graph(2, 4, units="days")
+    all_candles = client.get_klines(timeframe="1m", days=30)
+    all_candles.create_crossover_graph(1, 2, units="days", save=False)
 
 
 def place_testnet_market_order():
     client = BinanceClient(test=True)
     client.market_order("ETHUSDT", Side.sell, 1)
-    print(client.position_risk())
+    print(client.position_summary())
 
 
 def report_summary_position_risk():
     client = BinanceClient(test=True)
-    print(client.position_risk())
+    print(client.position_summary())
 
 
 if __name__ == "__main__":

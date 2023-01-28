@@ -121,4 +121,4 @@ def notify_ma_crossover(window_min, window_max, units):
 
 
 if __name__ == "__main__":
-    notify_ma_crossover(2, 4, units="days")
+    notify_ma_crossover(1, 2, units="days")
