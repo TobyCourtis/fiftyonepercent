@@ -116,6 +116,7 @@ class BinanceClient:
             total_df = pd.DataFrame(
                 [symbol, 'Total', symbol_data.qty.sum(), np.nan, symbol_data.Fee.sum(), symbol_data.PnL.sum()],
                 index=symbol_data.columns).T
+
             symbol_data = symbol_data.append(total_df)
             pnl_df.append(symbol_data)
 
@@ -234,7 +235,7 @@ class BinanceClient:
             wap = wap / qty
             order_message = "Order filled - qty: %s price: %s" % (round(qty, 2), round(wap, 2))
             slack_notify(order_message, "crypto-trading")
-            print(order_message)
+            return order_message
         except ClientError as error:
             print(
                 "Found error. status: {}, error code: {}, error message: {}".format(
