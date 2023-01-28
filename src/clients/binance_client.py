@@ -119,26 +119,30 @@ class BinanceClient:
             for trade_info in trade_history:
                 coin_data = {}
                 coin_data['Symbol'] = trade_info['symbol']
-                coin_data['qty'] = float(trade_info['qty']) if trade_info['isBuyer'] == True else float(
+                coin_data['QTY'] = float(trade_info['qty']) if trade_info['isBuyer'] == True else float(
                     trade_info['qty']) * -1
                 coin_data['WAP'] = float(trade_info['price']) * float(trade_info['qty'])
-                coin_data['Fee'] = float(trade_info['commission'])
+                coin_data['FEE'] = float(trade_info['commission'])
                 coin_data['Side'] = 'Buy' if trade_info['isBuyer'] == True else 'Sell'  # 1 is buy and 0 Sell
-                coin_data['PnL'] = ((live_px - float(trade_info['price'])) * float(coin_data['qty'])) - float(
+                coin_data['PnL'] = ((live_px - float(trade_info['price'])) * float(coin_data['QTY'])) - float(
                     trade_info['commission'])
                 symbol_data.append(coin_data)
             symbol_data = pd.DataFrame(symbol_data)
             symbol_data = symbol_data.groupby(['Symbol', 'Side']).sum()
-            symbol_data['WAP'] = abs(symbol_data['WAP'] / symbol_data['qty'])
+            symbol_data['WAP'] = abs(symbol_data['WAP'] / symbol_data['QTY'])
             symbol_data.reset_index(inplace=True)
             total_df = pd.DataFrame(
-                [symbol, 'Total', symbol_data.qty.sum(), np.nan, symbol_data.Fee.sum(), symbol_data.PnL.sum()],
+                [symbol, 'Total', symbol_data.QTY.sum(), np.nan, symbol_data.FEE.sum(), symbol_data.PnL.sum()],
                 index=symbol_data.columns).T
-
             symbol_data = symbol_data.append(total_df)
             pnl_df.append(symbol_data)
-
         pnl_df = pd.concat(pnl_df, axis=1)
+        pnl_df['Symbol - Side'] = pnl_df.apply(lambda x: '%s - %s' % (x['Symbol'], x['Side']), axis=1)
+        pnl_df.set_index('Symbol - Side', inplace=True)
+        pnl_df.drop(['Symbol', 'Side'], axis=1, inplace=True)
+        pnl_df = pnl_df.astype(float)
+        pnl_df = pnl_df.replace(np.nan, "-")
+        notifier.slack_notify(f"\nPnL Table\n {format_markdown(pnl_df.round(2))}", "muted-dump")
         return pnl_df
 
     """
