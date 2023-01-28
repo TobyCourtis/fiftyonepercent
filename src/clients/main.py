@@ -11,6 +11,7 @@ from binance.spot import Spot
 
 from src.clients.candlesticks import Candlesticks
 from src.clients.helpers import Side
+from src.notify.notifier import slack_notify
 
 
 class BinanceClient:
@@ -224,9 +225,11 @@ class BinanceClient:
 
         try:
             response = self.client.new_order(**params)
-            # print(response)
-            # Notify the below to slack
-            print("Order filled - qty: %s price: %s" % (response['fills'][0]['qty'], response['fills'][0]['price']))
+            order_message = "Order filled - qty: %s price: %s" % (
+                response['fills'][0]['qty'], response['fills'][0]['price'])
+
+            slack_notify(order_message, "crypto-trading")
+            print(order_message)
         except ClientError as error:
             print(
                 "Found error. status: {}, error code: {}, error message: {}".format(
@@ -239,6 +242,5 @@ if __name__ == "__main__":
     client = BinanceClient(test=True)
     client.market_order("ETHUSDT", Side.sell, 1)
     print(client.position_risk())
-    # all_candles = client.get_klines(timeframe="1m", days=6)
-    # all_candles.plot_crossover(2, 4, units="days")
+
     print("Finished and exited")
