@@ -4,7 +4,7 @@ This file will house examples for using functions throughout our project
 Examples will include buying, selling, plotting and more.
 """
 
-from src.clients.main import BinanceClient
+from src.clients.binance_client import BinanceClient
 from src.clients.helpers import Side
 
 

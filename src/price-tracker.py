@@ -1,6 +1,6 @@
 from notify.notifier import *
 import sys
-from src.clients.main import BinanceClient
+from src.clients.binance_client import BinanceClient
 from src.clients.helpers import moving_average
 
 

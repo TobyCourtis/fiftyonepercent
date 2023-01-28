@@ -1,6 +1,6 @@
 import plotly.graph_objects as go
 
-from main import BinanceClient
+from binance_client import BinanceClient
 
 import time
 
