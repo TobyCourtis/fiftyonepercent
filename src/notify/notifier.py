@@ -9,7 +9,7 @@ def google_mini_notify(text):
     requests.get("http://192.168.86.39:5000/say", params={"text": text})
 
 
-def slack_notify(text, channel='kingslanding'):
+def slack_notify(text, channel='crypto-trading'):
     global auth_url
     if not auth_url:
         with open(os.path.dirname(__file__) + "/../keys/slack-webhook.json") as f:
