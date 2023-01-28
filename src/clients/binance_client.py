@@ -10,7 +10,7 @@ from binance.error import ClientError
 from binance.spot import Spot
 
 from src.clients.candlesticks import Candlesticks
-from src.clients.helpers import Side
+from src.clients.helpers import Side, format_markdown, epoch_to_date
 from src.notify import notifier
 
 
@@ -65,26 +65,49 @@ class BinanceClient:
             else:
                 print(f"{i}: {acc_info[i]}")
 
-    def show_orders(self, symbol):
-        try:
-            response = self.client.get_orders(symbol, recvWindow=60000)
-            if len(response) == 0:
-                print("No orders were found")
-                return
-            for i in response:
-                print(i)
-        except ClientError as error:
-            print(
-                "Found error. status: {}, error code: {}, error message: {}".format(
-                    error.status_code, error.error_code, error.error_message
-                )
-            )
-
     """
     POSITION/PNL INFORMATION
     """
 
-    def get_market_position(self):
+    def show_open_orders(self, symbol="ETHUSDT"):
+
+        if self.test:
+            symbol = "ETHUSDT"
+
+        try:
+            response = self.client.get_open_orders(symbol, recvWindow=60000)
+            if len(response) == 0:
+                notifier.slack_notify("No live orders",
+                                      "muted-dump")
+                return np.nan
+            orders_out = []
+            for order_info in response:
+                order = {}
+                order['Symbol'] = order_info['symbol']
+                order['Side'] = order_info['side']
+                order['Price'] = float(order_info['price'])
+                order['OrigQty'] = float(order_info['origQty'])
+                order['ExecutedQty'] = float(order_info['executedQty'])
+                order['Status'] = order_info['status']
+                order['timeInForce'] = order_info['timeInForce']
+                order['Type'] = order_info['type']
+                order['Time'] = epoch_to_date(order_info['time'])
+                orders_out.append(order)
+            orders_out = pd.DataFrame(orders_out)
+            orders_out['Symbol - Side'] = orders_out.apply(lambda x: '%s - %s' % (x['Symbol'], x['Side']), axis=1)
+            orders_out.set_index('Symbol - Side', inplace=True)
+            orders_out.drop(['Symbol', 'Side'], axis=1, inplace=True)
+            notifier.slack_notify(f"\nPnL Table\n {format_markdown(orders_out.round(2))}", "muted-dump")
+            return orders_out
+
+        except ClientError as error:
+            print(
+                "Unable to Pull Order - Found error. status: {}, error code: {}, error message: {}".format(
+                    error.status_code, error.error_code, error.error_message
+                )
+            )
+
+    def get_market_position(self, symbol="ETHUSDT"):
         """
 
         Function to return the current net position of the coin that is passed
@@ -96,11 +119,21 @@ class BinanceClient:
         else:
             return 0  # IP is blocked as of now so we have hardcoded 0
 
-        trade_history = self.client.my_trades(symbol=symbol)
-        qty = 0
-        for trade_info in trade_history:
-            qty += float(trade_info['qty'])
-        return qty
+        try:
+            trade_history = self.client.my_trades(symbol=symbol, recvWindow=60000)
+            if len(trade_history) == 0:
+                return 0
+            qty = 0
+            for trade_info in trade_history:
+                qty += float(trade_info['qty'])
+            return qty
+
+        except ClientError as error:
+            print(
+                "Unable to pull trades - Found error. status: {}, error code: {}, error message: {}".format(
+                    error.status_code, error.error_code, error.error_message
+                )
+            )
 
     def position_summary(self, symbol_list=["ETHUSDT"]):
         """
@@ -110,40 +143,48 @@ class BinanceClient:
         :param symbol_list: list of coins that you want included in the report
         :return: Dataframe showing the coins in the index and pnl in the columns. DF will include WAP.
         """
+        try:
+            pnl_df = []
+            for symbol in symbol_list:
+                trade_history = self.client.my_trades(symbol=symbol)
+                live_px = float(self.client.ticker_price(symbol=symbol)['price'])
+                symbol_data = []
+                for trade_info in trade_history:
+                    coin_data = {}
+                    coin_data['Symbol'] = trade_info['symbol']
+                    coin_data['QTY'] = float(trade_info['qty']) if trade_info['isBuyer'] == True else float(
+                        trade_info['qty']) * -1
+                    coin_data['WAP'] = float(trade_info['price']) * float(trade_info['qty'])
+                    coin_data['FEE'] = float(trade_info['commission'])
+                    coin_data['Side'] = 'Buy' if trade_info['isBuyer'] == True else 'Sell'  # 1 is buy and 0 Sell
+                    coin_data['PnL'] = ((live_px - float(trade_info['price'])) * float(coin_data['QTY'])) - float(
+                        trade_info['commission'])
+                    symbol_data.append(coin_data)
+                symbol_data = pd.DataFrame(symbol_data)
+                symbol_data = symbol_data.groupby(['Symbol', 'Side']).sum()
+                symbol_data['WAP'] = abs(symbol_data['WAP'] / symbol_data['QTY'])
+                symbol_data.reset_index(inplace=True)
+                total_df = pd.DataFrame(
+                    [symbol, 'Total', symbol_data.QTY.sum(), np.nan, symbol_data.FEE.sum(), symbol_data.PnL.sum()],
+                    index=symbol_data.columns).T
+                symbol_data = symbol_data.append(total_df)
+                pnl_df.append(symbol_data)
+            pnl_df = pd.concat(pnl_df, axis=1)
+            pnl_df['Symbol - Side'] = pnl_df.apply(lambda x: '%s - %s' % (x['Symbol'], x['Side']), axis=1)
+            pnl_df.set_index('Symbol - Side', inplace=True)
+            pnl_df.drop(['Symbol', 'Side'], axis=1, inplace=True)
+            pnl_df = pnl_df.astype(float)
+            pnl_df = pnl_df.replace(np.nan, "-")
+            notifier.slack_notify(f"\nPnL Table\n {format_markdown(pnl_df.round(2))}", "muted-dump")
+            return pnl_df
 
-        pnl_df = []
-        for symbol in symbol_list:
-            trade_history = self.client.my_trades(symbol=symbol)
-            live_px = float(self.client.ticker_price(symbol=symbol)['price'])
-            symbol_data = []
-            for trade_info in trade_history:
-                coin_data = {}
-                coin_data['Symbol'] = trade_info['symbol']
-                coin_data['QTY'] = float(trade_info['qty']) if trade_info['isBuyer'] == True else float(
-                    trade_info['qty']) * -1
-                coin_data['WAP'] = float(trade_info['price']) * float(trade_info['qty'])
-                coin_data['FEE'] = float(trade_info['commission'])
-                coin_data['Side'] = 'Buy' if trade_info['isBuyer'] == True else 'Sell'  # 1 is buy and 0 Sell
-                coin_data['PnL'] = ((live_px - float(trade_info['price'])) * float(coin_data['QTY'])) - float(
-                    trade_info['commission'])
-                symbol_data.append(coin_data)
-            symbol_data = pd.DataFrame(symbol_data)
-            symbol_data = symbol_data.groupby(['Symbol', 'Side']).sum()
-            symbol_data['WAP'] = abs(symbol_data['WAP'] / symbol_data['QTY'])
-            symbol_data.reset_index(inplace=True)
-            total_df = pd.DataFrame(
-                [symbol, 'Total', symbol_data.QTY.sum(), np.nan, symbol_data.FEE.sum(), symbol_data.PnL.sum()],
-                index=symbol_data.columns).T
-            symbol_data = symbol_data.append(total_df)
-            pnl_df.append(symbol_data)
-        pnl_df = pd.concat(pnl_df, axis=1)
-        pnl_df['Symbol - Side'] = pnl_df.apply(lambda x: '%s - %s' % (x['Symbol'], x['Side']), axis=1)
-        pnl_df.set_index('Symbol - Side', inplace=True)
-        pnl_df.drop(['Symbol', 'Side'], axis=1, inplace=True)
-        pnl_df = pnl_df.astype(float)
-        pnl_df = pnl_df.replace(np.nan, "-")
-        notifier.slack_notify(f"\nPnL Table\n {format_markdown(pnl_df.round(2))}", "muted-dump")
-        return pnl_df
+
+        except ClientError as error:
+            print(
+                "Unable to pull report summary - Found error. status: {}, error code: {}, error message: {}".format(
+                    error.status_code, error.error_code, error.error_message
+                )
+            )
 
     """
     MARKET INFORMATION
@@ -269,6 +310,6 @@ class BinanceClient:
 if __name__ == "__main__":
     client = BinanceClient(test=True)
     client.market_order("ETHUSDT", Side.sell, 1)
-    print(client.position_risk())
+    print(client.position_summary())
 
     print("Finished and exited")

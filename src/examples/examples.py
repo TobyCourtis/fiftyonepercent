@@ -24,6 +24,9 @@ def report_summary_position_risk():
     client = BinanceClient(test=True)
     print(client.position_summary())
 
+def get_live_orders():
+    client = BinanceClient(test=True)
+    print(client.show_open_orders())
 
 def get_production_position():
     client = BinanceClient(test=False)
@@ -31,4 +34,4 @@ def get_production_position():
 
 
 if __name__ == "__main__":
-    get_production_position()
+    get_live_orders()
