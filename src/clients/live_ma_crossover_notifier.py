@@ -64,7 +64,7 @@ def notify_ma_crossover(window_min, window_max, units):
             slack_notify(
                 f"Sell Signal - Order Executed. Time={latest_row.name}, Short={latest_row['Short']}, Long={latest_row['Long']}, "
                 f"windowMin={window_min}, windowMax={window_max}, units={units}", "crypto-trading")
-        elif (position == 1) & (qty > 0):
+        elif (position == 1) & (qty > 0.0005):
             slack_notify(
                 f"Buy Signal - Not Executed. Qty greater than 0 Already. Time={latest_row.name}, Short={latest_row['Short']}, Long={latest_row['Long']}, "
                 f"windowMin={window_min}, windowMax={window_max}, units={units}", "crypto-trading")
