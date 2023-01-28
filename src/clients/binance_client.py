@@ -84,7 +84,7 @@ class BinanceClient:
     POSITION/PNL INFORMATION
     """
 
-    def get_position(self, symbol="ETHUSDT"):
+    def get_market_position(self, symbol="ETHUSDT"):
         """
 
         Function to return the current net position of the coin that is passed
