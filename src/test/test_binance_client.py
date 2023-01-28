@@ -5,6 +5,7 @@ from binance.spot import Spot
 
 from src.clients.binance_client import BinanceClient
 from src.clients.helpers import Side
+from src.notify import notifier
 
 market_order_return_value = {
     "symbol": "BTCUSDT",
@@ -51,6 +52,8 @@ market_order_return_value = {
 
 mocked_spot_class = Spot()
 mocked_spot_class.new_order = MagicMock(return_value=market_order_return_value)
+
+notifier.slack_notify = MagicMock(return_value="nothing!")
 
 
 class TestBinanceClient(unittest.TestCase):

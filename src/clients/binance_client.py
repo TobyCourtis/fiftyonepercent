@@ -11,7 +11,7 @@ from binance.spot import Spot
 
 from src.clients.candlesticks import Candlesticks
 from src.clients.helpers import Side
-from src.notify.notifier import slack_notify
+from src.notify import notifier
 
 
 class BinanceClient:
@@ -234,7 +234,7 @@ class BinanceClient:
                 qty += float(fill['qty'])
             wap = wap / qty
             order_message = "Order filled - qty: %s price: %s" % (round(qty, 2), round(wap, 2))
-            slack_notify(order_message, "crypto-trading")
+            notifier.slack_notify(order_message, "crypto-trading")
             return order_message
         except ClientError as error:
             print(
