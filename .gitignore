@@ -2,3 +2,5 @@
 /src/keys/
 .DS_Store
 **__pycache__**
+/src/test/_trial_temp
+/src/temporary_runner.py
