@@ -1,5 +1,6 @@
 import math
 import time
+from enum import Enum
 
 """
 HELPER FUNCTIONS
@@ -42,6 +43,9 @@ def convert_to_hours(window_min, window_max, units):
 # Important: Will round 14:03:59 > 14:04:00 for graph readability
 epoch_to_date = lambda epoch: time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(math.ceil(int(epoch) / 1000)))
 
+class Side(Enum):
+    buy = 'BUY'
+    sell = 'SELL'
 
 def bruce_buffer():
     print(

@@ -1,13 +1,17 @@
 import datetime
+import datetime as dt
 import json
 import os
 from pprint import pprint
-import pandas as pd
 
+import numpy as np
+import pandas as pd
 from binance.error import ClientError
 from binance.spot import Spot
 
 from src.clients.candlesticks import Candlesticks
+from src.clients.helpers import Side
+from src.notify.notifier import slack_notify
 
 
 class BinanceClient:
@@ -80,7 +84,6 @@ class BinanceClient:
     POSITION/PNL INFORMATION
     """
 
-    #This should pull a list of dicts showing info per coin in the holding
     def position_risk(self, symbol_list=["ETHUSDT"]):
         """
 
@@ -90,28 +93,32 @@ class BinanceClient:
         :return: Dataframe showing the coins in the index and pnl in the columns. DF will include WAP.
         """
 
-
         pnl_df = []
         for symbol in symbol_list:
-            #I will add a seperate function for get trades as may need a loop
             trade_history = self.client.my_trades(symbol=symbol)
-            live_px = self.client.ticker_price(symbol=symbol)
+            live_px = float(self.client.ticker_price(symbol=symbol)['price'])
             symbol_data = []
             for trade_info in trade_history:
                 coin_data = {}
                 coin_data['Symbol'] = trade_info['symbol']
-                coin_data['qty'] = trade_info['qty'] if trade_info['isBuyer'] == True else trade_info['qty']*-1
-                coin_data['WAP'] = trade_info['price']*trade_info['qty']
-                coin_data['Fee'] = trade_info['commission']
-                coin_data['Side'] = 'Buy' if trade_info['isBuyer'] == True else 'Sell' #1 is buy and 0 Sell
-                coin_data['PnL'] = ((live_px-trade_info['price'])*coin_data['qty']) - trade_info['commission']
+                coin_data['qty'] = float(trade_info['qty']) if trade_info['isBuyer'] == True else float(
+                    trade_info['qty']) * -1
+                coin_data['WAP'] = float(trade_info['price']) * float(trade_info['qty'])
+                coin_data['Fee'] = float(trade_info['commission'])
+                coin_data['Side'] = 'Buy' if trade_info['isBuyer'] == True else 'Sell'  # 1 is buy and 0 Sell
+                coin_data['PnL'] = ((live_px - float(trade_info['price'])) * float(coin_data['qty'])) - float(
+                    trade_info['commission'])
                 symbol_data.append(coin_data)
             symbol_data = pd.DataFrame(symbol_data)
             symbol_data = symbol_data.groupby(['Symbol', 'Side']).sum()
-            symbol_data['WAP'] = abs(symbol_data['WAP']/symbol_data['qty'])
-            symbol_data.set_index('Symbol', inplace=True)
+            symbol_data['WAP'] = abs(symbol_data['WAP'] / symbol_data['qty'])
+            symbol_data.reset_index(inplace=True)
+            total_df = pd.DataFrame(
+                [symbol, 'Total', symbol_data.qty.sum(), np.nan, symbol_data.Fee.sum(), symbol_data.PnL.sum()],
+                index=symbol_data.columns).T
+            symbol_data = symbol_data.append(total_df)
             pnl_df.append(symbol_data)
-            #Once tested with real data this can be made nicer with summary per coin
+
         pnl_df = pd.concat(pnl_df, axis=1)
         return pnl_df
 
@@ -197,25 +204,32 @@ class BinanceClient:
     TRADE FUNCTIONS
     """
 
-    def buy(self, symbol):
+    def market_order(self, symbol, side: Side, qty: float):
+
         if not self.test:
             print("Buying is disabled outside of test mode")
             exit()
 
+        if not isinstance(side, Side):
+            raise TypeError('Side must be Equal to BUY or SELL')
+
         params = {
             "symbol": symbol,
-            "side": "SELL",
-            "type": "LIMIT",
-            "timeInForce": "GTC",  # TODO - What is this enum
-            "quantity": 0.002,
-            "price": 9500,  # TODO - Look at docs for why price is specified
-            "recvWindow": 60000
+            "side": side.value,
+            "type": "MARKET",
+            "quantity": str(qty),
+            "timestamp": int(round(dt.datetime.today().timestamp()))
         }
 
-        print(f"Order to sell {symbol}:")
+        print(f"Order to {side.value} {symbol}:")
+
         try:
             response = self.client.new_order(**params)
-            pprint(response)
+            order_message = "Order filled - qty: %s price: %s" % (
+                response['fills'][0]['qty'], response['fills'][0]['price'])
+
+            slack_notify(order_message, "crypto-trading")
+            print(order_message)
         except ClientError as error:
             print(
                 "Found error. status: {}, error code: {}, error message: {}".format(
@@ -223,17 +237,10 @@ class BinanceClient:
                 )
             )
 
-    def sell(self):
-        if not self.test:
-            print("Selling is disabled outside of test mode")
-            exit()
-        # TODO implement sell
-        print("sell")
-
 
 if __name__ == "__main__":
-    client = BinanceClient(test=False)
-    all_candles = client.get_klines(timeframe="1m", days=6)
-    all_candles.plot_crossover(2, 4, units="days")
+    client = BinanceClient(test=True)
+    client.market_order("ETHUSDT", Side.sell, 1)
+    print(client.position_risk())
 
     print("Finished and exited")
