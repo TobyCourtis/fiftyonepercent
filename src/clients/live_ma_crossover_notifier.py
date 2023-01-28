@@ -1,6 +1,5 @@
 import time
 
-from helpers import convert_to_hours, epoch_to_date, bruce_buffer
 from binance_client import BinanceClient
 from helpers import epoch_to_date, epoch_to_minutes, bruce_buffer
 from src.notify import notifier, slack_image_upload
@@ -52,9 +51,9 @@ def notify_ma_crossover(window_min, window_max, units):
         position = all_candles.get_current_position(ma_crossover_dataframe)
         qty = client.get_market_position()
 
+        latest_row = ma_crossover_dataframe.iloc[-1]
         if (position == 1) & (qty == 0):
             # Buy signal + no position on coin. Okay to buy. Make Trade add stop signal.
-            latest_row = ma_crossover_dataframe.iloc[-1]
             notifier.slack_notify(
                 f"Buy Signal - Order Executed. "
                 f"Time={latest_row.name}, "
@@ -66,7 +65,6 @@ def notify_ma_crossover(window_min, window_max, units):
                 "crypto-trading")
         elif (position == -1) & (qty > 0):
             # Sell signal + position on coin. Okay to sell. Make Trade and clear stop signal.
-            latest_row = ma_crossover_dataframe.iloc[-1]
             notifier.slack_notify(
                 f"Sell Signal - Order Executed. "
                 f"Time={latest_row.name}, "
