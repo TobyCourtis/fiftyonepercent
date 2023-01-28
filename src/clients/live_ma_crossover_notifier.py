@@ -2,7 +2,8 @@ import time
 
 from helpers import convert_to_hours, epoch_to_date, bruce_buffer
 from binance_client import BinanceClient
-from src.notify.notifier import slack_notify
+from helpers import convert_to_hours, epoch_to_date, epoch_to_minutes, bruce_buffer
+from src.notify import notifier, slack_image_upload
 
 
 def notify_ma_crossover(window_min, window_max, units):
@@ -55,7 +56,7 @@ def notify_ma_crossover(window_min, window_max, units):
         if (position == 1) & (qty == 0):
             # Buy signal + no position on coin. Okay to buy. Make Trade add stop signal.
             latest_row = ma_crossover_dataframe.iloc[-1]
-            slack_notify(
+            notifier.slack_notify(
                 f"Buy Signal - Order Executed. "
                 f"Time={latest_row.name}, "
                 f"Short={latest_row['Short']}, "
@@ -67,7 +68,7 @@ def notify_ma_crossover(window_min, window_max, units):
         elif (position == -1) & (qty > 0):
             # Sell signal + position on coin. Okay to sell. Make Trade and clear stop signal.
             latest_row = ma_crossover_dataframe.iloc[-1]
-            slack_notify(
+            notifier.slack_notify(
                 f"Sell Signal - Order Executed. "
                 f"Time={latest_row.name}, "
                 f"Short={latest_row['Short']}, "
@@ -79,7 +80,7 @@ def notify_ma_crossover(window_min, window_max, units):
 
         elif (position == 1) & (qty > 0.0005):
             # Buy signal + position on coin. Don't buy more, previous sell missed and stop not hit. Wait for next sell.
-            slack_notify(
+            notifier.slack_notify(
                 f"Buy Signal - Not Executed. Qty greater than 0 Already. "
                 f"Time={latest_row.name}, "
                 f"Short={latest_row['Short']}, "
@@ -90,7 +91,7 @@ def notify_ma_crossover(window_min, window_max, units):
                 "crypto-trading")
         elif (position == -1) & (qty == 0):
             # Sell signal + no position on coin. Don't sell and go short. Previous buy missed, wait for the next.
-            slack_notify(
+            notifier.slack_notify(
                 f"Sell Signal - Not Executed. Qty 0 Already. "
                 f"Time={latest_row.name}, "
                 f"Short={latest_row['Short']}, "
@@ -102,6 +103,12 @@ def notify_ma_crossover(window_min, window_max, units):
         else:
             print('\nNo Signal - Do not buy or sell\n')
             pass
+
+        current_minutes_value = epoch_to_minutes(new_start_time)
+
+        if current_minutes_value % 10 == 0:  # every 10 minutes save current snapshot
+            all_candles.create_crossover_graph(window_min, window_max, units)
+            slack_image_upload.upload_current_plot()
 
         # TODO every 10 minutes send photo of graph to slack
 

@@ -1,9 +1,16 @@
 import unittest
 
-from . import epoch_to_date, convert_to_hours
+from . import epoch_to_date, convert_to_hours, epoch_to_minutes
 
 
 class TestHelpers(unittest.TestCase):
+    def test_epoch_to_minutes(self):
+        actual_minutes = epoch_to_minutes(1674650471000)  # epoch with 3 dp
+        expected_date = "2023-01-25 12:41:11"
+        expected_minutes = expected_date[-5:-3]
+
+        self.assertEqual(actual_minutes, int(expected_minutes))
+
     def test_epoch(self):
         actual_date = epoch_to_date(1674650471000)  # epoch with 3 dp
         expected_date = "2023-01-25 12:41:11"

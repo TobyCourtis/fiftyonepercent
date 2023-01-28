@@ -11,7 +11,7 @@ from src.notify import notifier
 # logging.basicConfig(level=logging.INFO)
 
 
-def upload_plot():
+def upload_current_plot():
     try:
         with open(os.path.dirname(__file__) + "/../keys/slack-notifier-bot-oauth.json") as f:
             SLACK_BOT_TOKEN = json.loads(f.read())["SLACK_BOT_TOKEN"]
@@ -29,3 +29,7 @@ def upload_plot():
         )
     except SlackApiError as e:
         notifier.slack_notify(f"Current plot upload failed with exception: {e}")
+
+
+if __name__ == "__main__":
+    upload_current_plot()

@@ -43,6 +43,8 @@ def convert_to_hours(window_min, window_max, units):
 # Important: Will round 14:03:59 > 14:04:00 for graph readability
 epoch_to_date = lambda epoch: time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(math.ceil(int(epoch) / 1000)))
 
+epoch_to_minutes = lambda epoch: int(epoch_to_date(epoch)[-5:-3])
+
 
 class Side(Enum):
     buy = 'BUY'
