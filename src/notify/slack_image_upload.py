@@ -19,7 +19,7 @@ def upload_plot():
         client = WebClient(SLACK_BOT_TOKEN)
 
         current_dir = os.path.dirname(os.path.realpath(__file__))
-        file_dir = f"{current_dir}/../clients/plot.png"
+        file_dir = f"{current_dir}/../clients/current_plot_snapshot.png"
 
         new_file_res = client.files_upload(
             channels="crypto-trading",

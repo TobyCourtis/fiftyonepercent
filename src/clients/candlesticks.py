@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pprint import pprint
 
 import matplotlib.pyplot as plt
@@ -48,12 +49,13 @@ class Candlesticks:
             case _:
                 raise Exception(f"Timeframe '{self.candleTimeframe}' is not supported yet!")
 
-    def plot_crossover(self, window_min, window_max, units="days"):
+    def create_crossover_graph(self, window_min, window_max, units="days", save=True):
         """
         Main function used to plot the MA crossover
 
         :param window_min:  Short window size
         :param window_max:  Long window size
+        :param save: Toggles save or display of graph snapshot to plot
         :param units: units of window_min/max in days or hours
         :return: (void) Plots the MA crossover graph
         """
@@ -85,7 +87,11 @@ class Candlesticks:
         plt.xlabel('Date', fontsize=15)
         plt.title('ETH MA Crossover', fontsize=20)
         plt.legend()
-        plt.show()
+        if save:
+            current_dir = os.path.dirname(os.path.realpath(__file__))
+            plt.savefig(f"{current_dir}/current_plot_snapshot.png")
+        else:
+            plt.show()
 
     def create_ma_crossover_dataframe(self, window_min, window_max, units):
         """
@@ -164,6 +170,7 @@ class Candlesticks:
         if len(self) <= limit:
             pass  # no need to shorten
         else:
+            # TODO - refactor into looping through a list of candlesticks attrs and calling a lamda to shorten to limit
             self.openTime = self.openTime[-limit:]
             self.open = self.open[-limit:]
             self.high = self.high[-limit:]
