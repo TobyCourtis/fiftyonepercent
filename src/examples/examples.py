@@ -20,5 +20,10 @@ def place_testnet_market_order():
     print(client.position_risk())
 
 
+def report_summary_position_risk():
+    client = BinanceClient(test=True)
+    print(client.position_risk())
+
+
 if __name__ == "__main__":
     plot_ma_crossover()
