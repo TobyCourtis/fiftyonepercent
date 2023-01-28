@@ -66,28 +66,94 @@ class TestCandlesticks(unittest.TestCase):
 
         self.assertRaises(TypeError, candles.shorten, required_length)
 
-    def test_diff_up(self):
-        df = pd.DataFrame([[0], [1]], columns=['Signal'])
+    def test_position_1m_buy(self):
+        df = pd.DataFrame([[0], [0], [0], [1]], columns=['Position'])
 
-        df['Position'] = df['Signal'].diff()
-        df.dropna(inplace=True)
-        actual = Candlesticks.get_current_position(None, df)
+        candles = Candlesticks()
+        candles.candleTimeframe = '1m'
+
+        actual = candles.get_current_position(df)
         self.assertEqual(actual, 1)
 
-    def test_diff_down(self):
-        df = pd.DataFrame([[1], [0]], columns=['Signal'])
+    def test_position_1m_trailing_buy(self):
+        df = pd.DataFrame([[0], [0], [1], [0]], columns=['Position'])
 
-        df['Position'] = df['Signal'].diff()
-        df.dropna(inplace=True)
-        actual = Candlesticks.get_current_position(None, df)
+        candles = Candlesticks()
+        candles.candleTimeframe = '1m'
+
+        actual = candles.get_current_position(df)
+        self.assertEqual(actual, 1)
+
+    def test_position_1m_trailing_sell(self):
+        df = pd.DataFrame([[0], [-1], [0], [0]], columns=['Position'])
+
+        candles = Candlesticks()
+        candles.candleTimeframe = '1m'
+
+        actual = candles.get_current_position(df)
         self.assertEqual(actual, -1)
 
-    def test_diff_unchaged(self):
-        df = pd.DataFrame([[1], [1]], columns=['Signal'])
+    def test_position_15m_trailing_buy(self):
+        df = pd.DataFrame([[0], [0], [1], [0]], columns=['Position'])
 
-        df['Position'] = df['Signal'].diff()
-        df.dropna(inplace=True)
-        actual = Candlesticks.get_current_position(None, df)
+        candles = Candlesticks()
+        candles.candleTimeframe = '15m'
+
+        actual = candles.get_current_position(df)
+        self.assertEqual(actual, 0)
+
+    def test_position_15m_trailing_sell(self):
+        df = pd.DataFrame([[0], [-1], [0], [0]], columns=['Position'])
+
+        candles = Candlesticks()
+        candles.candleTimeframe = '15m'
+
+        actual = candles.get_current_position(df)
+        self.assertEqual(actual, 0)
+
+    def test_position_15m_buy(self):
+        df = pd.DataFrame([[0], [0], [0], [1]], columns=['Position'])
+
+        candles = Candlesticks()
+        candles.candleTimeframe = '15m'
+
+        actual = candles.get_current_position(df)
+        self.assertEqual(actual, 1)
+
+    def test_position_15m_sell(self):
+        df = pd.DataFrame([[0], [0], [0], [-1]], columns=['Position'])
+
+        candles = Candlesticks()
+        candles.candleTimeframe = '15m'
+
+        actual = candles.get_current_position(df)
+        self.assertEqual(actual, -1)
+
+    def test_position_15m_unchanged(self):
+        df = pd.DataFrame([[0], [0], [0], [0]], columns=['Position'])
+
+        candles = Candlesticks()
+        candles.candleTimeframe = '1m'
+
+        actual = candles.get_current_position(df)
+        self.assertEqual(actual, 0)
+
+    def test_position_buy_sell_quick(self):
+        df = pd.DataFrame([[1], [0], [-1], [0]], columns=['Position'])
+
+        candles = Candlesticks()
+        candles.candleTimeframe = '1m'
+
+        actual = candles.get_current_position(df)
+        self.assertEqual(actual, -1)
+
+    def test_position_1m_outrange(self):
+        df = pd.DataFrame([[0], [1], [0], [0], [0], [0], [0], [0]], columns=['Position'])
+
+        candles = Candlesticks()
+        candles.candleTimeframe = '1m'
+
+        actual = candles.get_current_position(df)
         self.assertEqual(actual, 0)
 
     def test_get_position(self):

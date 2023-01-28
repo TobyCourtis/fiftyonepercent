@@ -84,7 +84,22 @@ class BinanceClient:
     POSITION/PNL INFORMATION
     """
 
-    def position_risk(self, symbol_list=["ETHUSDT"]):
+    def get_market_position(self, symbol="ETHUSDT"):
+        """
+
+        Function to return the current net position of the coin that is passed
+
+        :param symbol: string of coin
+        :return: float of position
+        """
+
+        trade_history = self.client.my_trades(symbol=symbol)
+        qty = 0
+        for trade_info in trade_history:
+            qty += float(trade_info['qty'])
+        return qty
+
+    def position_summary(self, symbol_list=["ETHUSDT"]):
         """
 
         Function to return the position and PnL of each coin holding

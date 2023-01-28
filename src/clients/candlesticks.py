@@ -117,7 +117,24 @@ class Candlesticks:
         return main_df
 
     def get_current_position(self, dataframe):
-        return dataframe['Position'].iloc[-1]
+        # return the latest non 0 within values within a time frame
+        match self.candleTimeframe:
+            case "1m":
+                look_back_window = 10  # 10 minute look back window for signals, Check the last signal.
+            case "15m":
+                look_back_window = 1
+            case "1h":
+                look_back_window = 1
+            case _:
+                raise Exception(f"Timeframe '{self.candleTimeframe}' is not supported!")
+
+        dataframe = dataframe.iloc[-look_back_window:]
+        dataframe = dataframe[dataframe['Position'] != 0]
+        if len(dataframe) == 0:
+            position = 0
+        else:
+            position = dataframe.iloc[-1, -1]
+        return position
 
     def add(self, candles: Candlesticks):
         if self.closeTime[-1] > candles.openTime[0]:

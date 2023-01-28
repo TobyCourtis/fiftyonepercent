@@ -2,7 +2,7 @@ import time
 
 from helpers import convert_to_hours, epoch_to_date, bruce_buffer
 from binance_client import BinanceClient
-from src.notify import notifier
+from src.notify.notifier import slack_notify
 
 
 def notify_ma_crossover(window_min, window_max, units):
@@ -50,21 +50,57 @@ def notify_ma_crossover(window_min, window_max, units):
         print("\n")
 
         position = all_candles.get_current_position(ma_crossover_dataframe)
+        qty = client.get_market_position()
 
-        if position == 1:
-            print('\n!notify buy!\n')
+        if (position == 1) & (qty == 0):
+            # Buy signal + no position on coin. Okay to buy. Make Trade add stop signal.
             latest_row = ma_crossover_dataframe.iloc[-1]
-            notifier.slack_notify(
-                f"Buy buy buy. Time={latest_row.name}, Short={latest_row['Short']}, Long={latest_row['Long']}, "
-                f"windowMin={window_min}, windowMax={window_max}, units={units}", "crypto-trading")
-        elif position == -1:
-            print('\nnotify sell\n')
+            slack_notify(
+                f"Buy Signal - Order Executed. "
+                f"Time={latest_row.name}, "
+                f"Short={latest_row['Short']}, "
+                f"Long={latest_row['Long']}, "
+                f"windowMin={window_min}, "
+                f"windowMax={window_max}, "
+                f"units={units}",
+                "crypto-trading")
+        elif (position == -1) & (qty > 0):
+            # Sell signal + position on coin. Okay to sell. Make Trade and clear stop signal.
             latest_row = ma_crossover_dataframe.iloc[-1]
-            notifier.slack_notify(
-                f"Sell sell sell. Time={latest_row.name}, Short={latest_row['Short']}, Long={latest_row['Long']}, "
-                f"windowMin={window_min}, windowMax={window_max}, units={units}", "crypto-trading")
+            slack_notify(
+                f"Sell Signal - Order Executed. "
+                f"Time={latest_row.name}, "
+                f"Short={latest_row['Short']}, "
+                f"Long={latest_row['Long']}, "
+                f"windowMin={window_min}, "
+                f"windowMax={window_max}, "
+                f"units={units}",
+                "crypto-trading")
+
+        elif (position == 1) & (qty > 0.0005):
+            # Buy signal + position on coin. Don't buy more, previous sell missed and stop not hit. Wait for next sell.
+            slack_notify(
+                f"Buy Signal - Not Executed. Qty greater than 0 Already. "
+                f"Time={latest_row.name}, "
+                f"Short={latest_row['Short']}, "
+                f"Long={latest_row['Long']}, "
+                f"windowMin={window_min}, "
+                f"windowMax={window_max}, "
+                f"units={units}",
+                "crypto-trading")
+        elif (position == -1) & (qty == 0):
+            # Sell signal + no position on coin. Don't sell and go short. Previous buy missed, wait for the next.
+            slack_notify(
+                f"Sell Signal - Not Executed. Qty 0 Already. "
+                f"Time={latest_row.name}, "
+                f"Short={latest_row['Short']}, "
+                f"Long={latest_row['Long']}, "
+                f"windowMin={window_min}, "
+                f"windowMax={window_max}, "
+                f"units={units}",
+                "crypto-trading")
         else:
-            print('\nDo not buy or sell\n')
+            print('\nNo Signal - Do not buy or sell\n')
             pass
 
         # TODO every 10 minutes send photo of graph to slack
