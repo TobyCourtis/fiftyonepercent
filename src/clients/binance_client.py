@@ -225,9 +225,14 @@ class BinanceClient:
 
         try:
             response = self.client.new_order(**params)
-            order_message = "Order filled - qty: %s price: %s" % (
-                response['fills'][0]['qty'], response['fills'][0]['price'])
-
+            fills = response['fills']
+            qty = 0
+            wap = 0
+            for fill in fills:
+                wap += float(fill['qty']) * float(fill['price'])
+                qty += float(fill['qty'])
+            wap = wap / qty
+            order_message = "Order filled - qty: %s price: %s" % (round(qty, 2), round(wap, 2))
             slack_notify(order_message, "crypto-trading")
             print(order_message)
         except ClientError as error:
