@@ -2,7 +2,7 @@ import time
 
 from helpers import convert_to_hours, epoch_to_date, bruce_buffer
 from binance_client import BinanceClient
-from helpers import convert_to_hours, epoch_to_date, epoch_to_minutes, bruce_buffer
+from helpers import epoch_to_date, epoch_to_minutes, bruce_buffer
 from src.notify import notifier, slack_image_upload
 
 
@@ -22,9 +22,8 @@ def notify_ma_crossover(window_min, window_max, units):
     """
     client = BinanceClient(test=False)
 
-    # initialise candles
-    _, window_max_in_hours = convert_to_hours(window_min, window_max, units)
-    all_candles = client.get_klines(hours=window_max_in_hours)
+    # initialise 30 days of candles
+    all_candles = client.get_klines(days=30)
 
     while True:
         new_start_time = all_candles.closeTime[-1]  # start from last candle closing time
@@ -108,7 +107,7 @@ def notify_ma_crossover(window_min, window_max, units):
 
         if current_minutes_value % 10 == 0:  # every 10 minutes save current snapshot
             all_candles.create_crossover_graph(window_min, window_max, units)
-            slack_image_upload.upload_current_plot()
+            slack_image_upload.upload_current_plot(window_min, window_max, units)
 
         # TODO every 10 minutes send photo of graph to slack
 
