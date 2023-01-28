@@ -25,5 +25,10 @@ def report_summary_position_risk():
     print(client.position_summary())
 
 
+def get_production_position():
+    client = BinanceClient(test=False)
+    print(client.get_market_position())
+
+
 if __name__ == "__main__":
-    create_ma_crossover()
+    get_production_position()

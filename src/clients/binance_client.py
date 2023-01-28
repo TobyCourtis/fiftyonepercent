@@ -84,14 +84,17 @@ class BinanceClient:
     POSITION/PNL INFORMATION
     """
 
-    def get_market_position(self, symbol="ETHUSDT"):
+    def get_market_position(self):
         """
 
         Function to return the current net position of the coin that is passed
 
-        :param symbol: string of coin
         :return: float of position
         """
+        if self.test:
+            symbol = "ETHUSDT"
+        else:
+            return 0  # IP is blocked as of now so we have hardcoded 0
 
         trade_history = self.client.my_trades(symbol=symbol)
         qty = 0
