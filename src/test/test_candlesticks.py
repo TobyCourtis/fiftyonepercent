@@ -138,6 +138,15 @@ class TestCandlesticks(unittest.TestCase):
         actual = candles.get_current_position(df)
         self.assertEqual(actual, 0)
 
+    def test_position_buy_sell_quick(self):
+        df = pd.DataFrame([[1], [0], [-1], [0]], columns=['Position'])
+
+        candles = Candlesticks()
+        candles.candleTimeframe = '1m'
+
+        actual = candles.get_current_position(df)
+        self.assertEqual(actual, -1)
+
     def test_position_1m_outrange(self):
         df = pd.DataFrame([[0], [1], [0], [0], [0], [0], [0], [0]], columns=['Position'])
 

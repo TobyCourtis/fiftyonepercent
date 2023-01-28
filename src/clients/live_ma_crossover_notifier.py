@@ -2,7 +2,7 @@ import time
 
 from helpers import convert_to_hours, epoch_to_date, bruce_buffer
 from binance_client import BinanceClient
-from src.notify import notifier
+from src.notify.notifier import slack_notify
 
 
 def notify_ma_crossover(window_min, window_max, units):
@@ -50,21 +50,30 @@ def notify_ma_crossover(window_min, window_max, units):
         print("\n")
 
         position = all_candles.get_current_position(ma_crossover_dataframe)
+        qty = client.get_market_position()
 
-        if position == 1:
+        if (position == 1) & (qty == 0):
             print('\n!notify buy!\n')
             latest_row = ma_crossover_dataframe.iloc[-1]
-            notifier.slack_notify(
-                f"Buy buy buy. Time={latest_row.name}, Short={latest_row['Short']}, Long={latest_row['Long']}, "
+            slack_notify(
+                f"Buy Signal - Order Executed. Time={latest_row.name}, Short={latest_row['Short']}, Long={latest_row['Long']}, "
                 f"windowMin={window_min}, windowMax={window_max}, units={units}", "crypto-trading")
-        elif position == -1:
+        elif (position == -1) & (qty > 0):
             print('\nnotify sell\n')
             latest_row = ma_crossover_dataframe.iloc[-1]
-            notifier.slack_notify(
-                f"Sell sell sell. Time={latest_row.name}, Short={latest_row['Short']}, Long={latest_row['Long']}, "
+            slack_notify(
+                f"Sell Signal - Order Executed. Time={latest_row.name}, Short={latest_row['Short']}, Long={latest_row['Long']}, "
+                f"windowMin={window_min}, windowMax={window_max}, units={units}", "crypto-trading")
+        elif (position == 1) & (qty > 0):
+            slack_notify(
+                f"Buy Signal - Not Executed. Qty greater than 0 Already. Time={latest_row.name}, Short={latest_row['Short']}, Long={latest_row['Long']}, "
+                f"windowMin={window_min}, windowMax={window_max}, units={units}", "crypto-trading")
+        elif (position == -1) & (qty == 0):
+            slack_notify(
+                f"Sell Signal - Not Executed. Qty 0 Already. Time={latest_row.name}, Short={latest_row['Short']}, Long={latest_row['Long']}, "
                 f"windowMin={window_min}, windowMax={window_max}, units={units}", "crypto-trading")
         else:
-            print('\nDo not buy or sell\n')
+            print('\nNo Signal - Do not buy or sell\n')
             pass
 
         # TODO every 10 minutes send photo of graph to slack
