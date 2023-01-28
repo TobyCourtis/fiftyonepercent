@@ -11,7 +11,7 @@ from src.notify import notifier
 # logging.basicConfig(level=logging.INFO)
 
 
-def upload_image(file_path, title, comment):
+def upload_image(file_path, title, comment, channel="crypto-trading"):
     try:
         with open(os.path.dirname(__file__) + "/../keys/slack-notifier-bot-oauth.json") as f:
             SLACK_BOT_TOKEN = json.loads(f.read())["SLACK_BOT_TOKEN"]
@@ -19,7 +19,7 @@ def upload_image(file_path, title, comment):
         client = WebClient(SLACK_BOT_TOKEN)
 
         new_file_res = client.files_upload(
-            channels="crypto-trading",
+            channels=channel,
             title=title,
             file=file_path,
             initial_comment=comment,
@@ -32,8 +32,8 @@ def upload_current_plot(window_min, window_max, units):
     current_dir = os.path.dirname(os.path.realpath(__file__))
     graph_snapshot_path = f"{current_dir}/../clients/current_plot_snapshot.png"
     title = "Current Plot"
-    comment = f"Latest plot using {window_min}, {window_max}, units={units}"
-    upload_image(file_path=graph_snapshot_path, title=title, comment=comment)
+    comment = f"Latest plot using windows length {window_min} and {window_max} with units '{units}'"
+    upload_image(file_path=graph_snapshot_path, title=title, comment=comment, channel="prod-data")
 
 
 if __name__ == "__main__":
