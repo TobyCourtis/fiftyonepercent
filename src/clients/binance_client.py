@@ -136,18 +136,16 @@ class BinanceClient:
                 )
             )
 
-    def get_market_position(self, symbol="ETHUSDT"):
+    def get_market_position(self, symbol=None):
         """
 
         Function to return the current net position of the coin that is passed
 
         :return: float of position
         """
-        symbol = "ETHUSDT" if self.test else "ETHGBP"  # only ETH supported for now
+        if symbol is None:
+            symbol = "ETHUSDT" if self.test else "ETHGBP"  # only ETH supported for now
         precision = 8  # from exchange_info ETH precision is 8 for test and prod
-
-        if not self.test:
-            return 0  # TODO fix: IP is blocked as of now so we have hardcoded 0
 
         try:
             trade_history = self.client.my_trades(symbol=symbol, recvWindow=60000)
