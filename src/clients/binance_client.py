@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 from binance.error import ClientError
 from binance.spot import Spot
+from pandas import DataFrame
 
 from src.clients.candlesticks import Candlesticks
 from src.clients.helpers import Side, epoch_to_date, create_image_from_dataframe, OrderType, add_spacing
@@ -69,7 +70,7 @@ class BinanceClient:
     POSITION/PNL INFORMATION
     """
 
-    def show_open_orders(self, order_type_filter=None):
+    def show_open_orders(self, order_type_filter=None, save_image=True) -> DataFrame:
 
         symbol = "ETHUSDT" if self.test else "ETHGBP"  # only ETH supported for now
 
@@ -79,20 +80,22 @@ class BinanceClient:
                 if not self.test:
                     notifier.slack_notify("No live orders",
                                           "muted-dump")
-                return f"No live orders were found. Environment Test={self.test}"
+                print(f"No live orders were found. Environment Test={self.test}, OrderTypeFilter={order_type_filter}")
+                return pd.DataFrame([])
             open_orders = []
             for order_info in response:
-                order = {}
-                order['OrderId'] = order_info['orderId']
-                order['Symbol'] = order_info['symbol']
-                order['Side'] = order_info['side']
-                order['Price'] = float(order_info['price'])
-                order['OrigQty'] = float(order_info['origQty'])
-                order['ExecutedQty'] = float(order_info['executedQty'])
-                order['Status'] = order_info['status']
-                order['timeInForce'] = order_info['timeInForce']
-                order['Type'] = order_info['type']
-                order['Time'] = epoch_to_date(order_info['time'])
+                order = {
+                    'OrderId': order_info['orderId'],
+                    'Symbol': order_info['symbol'],
+                    'Side': order_info['side'],
+                    'Price': float(order_info['price']),
+                    'OrigQty': float(order_info['origQty']),
+                    'ExecutedQty': float(order_info['executedQty']),
+                    'Status': order_info['status'],
+                    'timeInForce': order_info['timeInForce'],
+                    'Type': order_info['type'],
+                    'Time': epoch_to_date(order_info['time'])
+                }
                 open_orders.append(order)
             open_orders = pd.DataFrame(open_orders)
 
@@ -108,7 +111,9 @@ class BinanceClient:
                         if not self.test:
                             notifier.slack_notify("No live orders",
                                                   "muted-dump")
-                        return f"No live orders were found for order type {order_type_filter.value} Environment Test={self.test}"
+                        print(f"No live orders were found for order type {order_type_filter.value} "
+                              f"Environment Test={self.test}")
+                        return open_orders
                     else:
                         print(add_spacing(f"Showing all orders of type '{order_type_filter.value}':"))
 
@@ -116,7 +121,9 @@ class BinanceClient:
 
             current_dir = os.path.dirname(os.path.realpath(__file__))
             open_orders_path = f"{current_dir}/../clients/current_open_orders_snapshot.png"
-            create_image_from_dataframe(open_orders, open_orders_path, "Open Orders")
+
+            if save_image:
+                create_image_from_dataframe(open_orders, open_orders_path, "Open Orders")
             if not self.test:
                 slack_image_upload.upload_image(open_orders_path, "PnL", f"Number of Open Orders - {len(response)}")
             return open_orders
@@ -333,6 +340,125 @@ class BinanceClient:
                     error.status_code, error.error_code, error.error_message
                 )
             )
+
+    def place_limit_order(self, side, price):
+        """
+        TEST ONLY
+        """
+
+        if not self.test:
+            raise Exception("This function is currently not enabled for production - no use case for stops")
+
+        symbol = "ETHUSDT" if self.test else "ETHGBP"  # only ETH supported for now
+
+        quantity = str(1)  # TODO when using limits make this
+
+        params = {
+            "symbol": symbol,
+            "side": side.value,
+            "type": "LIMIT",
+            "quantity": quantity,  # we will have to dynamically buy quantity based on price we have. Rounding important
+            "timestamp": int(round(dt.datetime.now().timestamp())),
+            "price": price,
+            "timeInForce": "GTC"
+        }
+
+        print(f"Placing order for {symbol}: quantity={quantity}, price={price}")
+        response = self.client.new_order(**params)
+        print("\nResponse:")
+        pprint(response)
+
+    def place_stop_order(self, stop_price):
+        """
+        Places stop order for ALL current position
+
+        :param stop_price: Stop price in fiat currency
+        :return: Response from Binance API
+        """
+
+        symbol = "ETHUSDT" if self.test else "ETHGBP"  # only ETH supported for now
+
+        quantity = str(self.get_market_position())  # get quantity of ALL of our current holdings
+        price = stop_price * 0.90
+        params = {
+            "symbol": symbol,
+            "side": Side.sell.value,  # for now always a sell order
+            "type": "STOP_LOSS_LIMIT",
+            "quantity": quantity,
+            "timestamp": int(round(dt.datetime.now().timestamp())),
+            "timeInForce": "GTC",  # place stop until we remove
+            "stopPrice": stop_price,
+            "price": price,  # price for limit order 5% less than the stop_price
+        }
+
+        print(f"Placing stop order for {symbol}: quantity={quantity}, stop_price={stop_price}, price={price}")
+        response = self.client.new_order(**params)
+        print("\nResponse:")
+        pprint(response)
+        return response
+
+    def remove_and_replace_stop(self, new_price):
+        """
+        UNIMPLEMENTED
+        """
+        # TODO - Implement if faster than cancel + place method
+        return f"Remove current stop and place another"
+
+    def cancel_all_open_orders_for_type(self, order_type: OrderType = None):
+        """
+        Cancels all orders of specific order type
+
+        :param order_type: OrderType for which all orders will be cancelled
+        :return: Message
+        """
+        if order_type is None:
+            self.cancel_all_open_orders()
+
+        symbol = "ETHUSDT" if self.test else "ETHGBP"  # only ETH supported for now
+
+        open_orders_df = self.show_open_orders(order_type_filter=order_type, save_image=False)
+
+        if len(open_orders_df) == 0:
+            output = f"No orders of type {order_type.value} were found. Exiting."
+            print(output)
+            return output
+
+        order_ids = open_orders_df['OrderId'].tolist()
+        for order_id in order_ids:
+            res = self.client.cancel_order(symbol=symbol, orderId=order_id)
+            if res['status'] != "CANCELED":
+                raise Exception("Order was not cancelled - FIX ME")
+            msg = f"Cancelled order ID {order_id} for {symbol}. " \
+                  f"Price={res['price']}, " \
+                  f"origQty={res['origQty']} " \
+                  f"type={res['type']} " \
+                  f"side={res['side']}"
+            if not self.test:
+                notifier.slack_notify(msg)
+            print(msg)
+
+        return f"Cancelled all orders of type {order_type}"
+
+    def cancel_all_open_orders(self):
+        """
+        Cancells all orders regardless of type currently for Ethereum only
+
+        :return: Response from Binance API
+        """
+
+        symbol = "ETHUSDT" if self.test else "ETHGBP"  # only ETH supported for now
+
+        # TODO try catch for if no orders are currently placed
+
+        open_orders = self.show_open_orders(save_image=False)
+
+        if len(open_orders) == 0:
+            return f"You have no open orders, exiting."
+
+        response = self.client.cancel_open_orders(symbol)  # requires order to be open
+        print(add_spacing("Response:"))
+        print(response)
+        return response
 
 
 if __name__ == "__main__":
