@@ -52,6 +52,8 @@ epoch_to_minutes = lambda epoch: int(epoch_to_date(epoch)[-5:-3])
 
 format_markdown = lambda markdown_table: "```\n" + markdown_table.to_markdown() + "\n```"
 
+add_spacing = lambda text: f"\n{text}\n"
+
 
 class Side(Enum):
     buy = 'BUY'

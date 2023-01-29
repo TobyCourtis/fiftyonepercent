@@ -10,7 +10,7 @@ from binance.error import ClientError
 from binance.spot import Spot
 
 from src.clients.candlesticks import Candlesticks
-from src.clients.helpers import Side, epoch_to_date, create_image_from_dataframe
+from src.clients.helpers import Side, epoch_to_date, create_image_from_dataframe, OrderType, add_spacing
 from src.notify import notifier, slack_image_upload
 
 
