@@ -166,7 +166,7 @@ class BinanceClient:
                 )
             )
 
-    def position_summary(self, symbol_list=["ETHUSDT"]):
+    def position_summary(self, symbol_list=None):
         """
 
         Function to return the position and PnL of each coin holding
@@ -174,6 +174,11 @@ class BinanceClient:
         :param symbol_list: list of coins that you want included in the report
         :return: Dataframe showing the coins in the index and pnl in the columns. DF will include WAP.
         """
+
+        if symbol_list is None:
+            symbol = "ETHUSDT" if self.test else "ETHGBP"  # only ETH supported for now
+            symbol_list = [symbol]
+
         try:
             pnl_df = []
             for symbol in symbol_list:
