@@ -69,19 +69,21 @@ class BinanceClient:
     POSITION/PNL INFORMATION
     """
 
-    def show_open_orders(self, symbol="ETHUSDT"):
-        if self.test:
-            symbol = "ETHUSDT"
+    def show_open_orders(self, order_type_filter=None):
+
+        symbol = "ETHUSDT" if self.test else "ETHGBP"  # only ETH supported for now
 
         try:
             response = self.client.get_open_orders(symbol, recvWindow=60000)
             if len(response) == 0:
-                notifier.slack_notify("No live orders",
-                                      "muted-dump")
-                return np.nan
+                if not self.test:
+                    notifier.slack_notify("No live orders",
+                                          "muted-dump")
+                return f"No live orders were found. Environment Test={self.test}"
             open_orders = []
             for order_info in response:
                 order = {}
+                order['OrderId'] = order_info['orderId']
                 order['Symbol'] = order_info['symbol']
                 order['Side'] = order_info['side']
                 order['Price'] = float(order_info['price'])
@@ -93,11 +95,31 @@ class BinanceClient:
                 order['Time'] = epoch_to_date(order_info['time'])
                 open_orders.append(order)
             open_orders = pd.DataFrame(open_orders)
+
+            if order_type_filter is not None:
+                param_type = type(order_type_filter)
+                if param_type != OrderType:
+                    raise TypeError(f"Parameter order_type_filter should be of type OrderType not {param_type}")
+                else:
+                    # drop rows if type does not match input param
+                    open_orders = open_orders.drop(open_orders[open_orders.Type != order_type_filter.value].index)
+
+                    if len(open_orders) == 0:
+                        if not self.test:
+                            notifier.slack_notify("No live orders",
+                                                  "muted-dump")
+                        return f"No live orders were found for order type {order_type_filter.value} Environment Test={self.test}"
+                    else:
+                        print(add_spacing(f"Showing all orders of type '{order_type_filter.value}':"))
+
             open_orders.set_index('Symbol', inplace=True)
+
             current_dir = os.path.dirname(os.path.realpath(__file__))
             open_orders_path = f"{current_dir}/../clients/current_open_orders_snapshot.png"
             create_image_from_dataframe(open_orders, open_orders_path, "Open Orders")
-            slack_image_upload.upload_image(open_orders_path, "PnL", f"Number of Open Orders - {len(response)}")
+            if not self.test:
+                slack_image_upload.upload_image(open_orders_path, "PnL", f"Number of Open Orders - {len(response)}")
+            return open_orders
 
         except ClientError as error:
             print(

@@ -27,9 +27,9 @@ def report_summary_position_risk():
     print(client.position_summary())
 
 
-def get_live_orders():
+def get_live_orders(filter=None):
     client = BinanceClient(test=True)
-    print(client.show_open_orders())
+    print(client.show_open_orders(order_type_filter=filter))
 
 
 def get_test_market_position():
@@ -60,7 +60,8 @@ def save_exchange_info():
 
 
 if __name__ == "__main__":
-    save_exchange_info()
+    # average_price()
+    # place_limit_order(price=500)
     # remove_all_stop_orders_()
-    # get_live_orders()
-    # get_live_orders()
+    get_live_orders(OrderType.limit)
+    # report_summary_position_risk()

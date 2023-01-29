@@ -58,6 +58,14 @@ class Side(Enum):
     sell = 'SELL'
 
 
+class OrderType(Enum):
+    limit = "LIMIT"
+    limit_maker = "LIMIT_MAKER"
+    market = "MARKET"
+    stop_loss_limit = "STOP_LOSS_LIMIT"
+    take_profit_limit = "TAKE_PROFIT_LIMIT"
+
+
 def create_image_from_dataframe(df, file_path, name):
     fig_background_color = 'lightgrey'
     fig_border = 'black'
@@ -96,6 +104,7 @@ def create_image_from_dataframe(df, file_path, name):
                 facecolor=fig.get_facecolor(),
                 dpi=150
                 )
+    print(add_spacing(f"Saved image to {file_path}"))
 
 
 def bruce_buffer():
