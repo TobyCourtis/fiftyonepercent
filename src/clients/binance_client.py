@@ -135,10 +135,11 @@ class BinanceClient:
 
         :return: float of position
         """
-        if self.test:
-            symbol = "ETHUSDT"
-        else:
-            return 0  # IP is blocked as of now so we have hardcoded 0
+        symbol = "ETHUSDT" if self.test else "ETHGBP"  # only ETH supported for now
+        precision = 8  # from exchange_info ETH precision is 8 for test and prod
+
+        if not self.test:
+            return 0  # TODO fix: IP is blocked as of now so we have hardcoded 0
 
         try:
             trade_history = self.client.my_trades(symbol=symbol, recvWindow=60000)
@@ -146,8 +147,8 @@ class BinanceClient:
                 return 0
             qty = 0
             for trade_info in trade_history:
-                qty += float(trade_info['qty'])
-            return qty
+                qty += round(float(trade_info['qty']), precision)
+            return round(qty, precision)
 
         except ClientError as error:
             print(
