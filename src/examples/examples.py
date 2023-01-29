@@ -7,7 +7,7 @@ Examples will include buying, selling, plotting and more.
 import json
 
 from src.clients.binance_client import BinanceClient
-from src.clients.helpers import Side, OrderType
+from src.clients.helpers import Side
 
 
 def create_ma_crossover():
@@ -37,14 +37,9 @@ def get_test_market_position():
     print(client.get_market_position())
 
 
-def remove_all_stop_orders_():
+def place_limit_order(price):
     client = BinanceClient(test=True)
-    client.remove_all_stop_orders()
-
-
-def place_limit_order():
-    client = BinanceClient(test=True)
-    client.place_limit_order(side=Side.buy, price=500)
+    client.place_limit_order(side=Side.buy, price=price)
 
 
 def save_exchange_info():
@@ -64,9 +59,21 @@ def average_price():
     client.avg_price()
 
 
+def _stop_order(stop_price):
+    client = BinanceClient(test=True)
+    client.place_stop_order(stop_price)  # if price goes to 500 sell
+
+
+def _cancel_all_open_orders_for_type(order_type):
+    client = BinanceClient(test=True)
+    client.cancel_all_open_orders_for_type(order_type)
+
+
 if __name__ == "__main__":
-    # average_price()
+    _stop_order(500)  # 1
+    # get_live_orders(OrderType.stop_loss_limit) # 2
+    # _cancel_all_open_orders_for_type(OrderType.stop_loss_limit) # 3
+
     # place_limit_order(price=500)
     # remove_all_stop_orders_()
-    get_live_orders(OrderType.limit)
     # report_summary_position_risk()
