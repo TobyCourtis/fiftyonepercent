@@ -51,6 +51,9 @@ def notify_ma_crossover(window_min, window_max, units):
         position = all_candles.get_current_position(ma_crossover_dataframe)
         qty = client.get_market_position()
 
+        print(f"\nCurrent qty: {qty}")
+        print("\n")
+
         latest_row = ma_crossover_dataframe.iloc[-1]
         if (position == 1) & (qty == 0):
             # Buy signal + no position on coin. Okay to buy. Make Trade add stop signal.

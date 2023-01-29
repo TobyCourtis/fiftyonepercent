@@ -69,11 +69,17 @@ def _cancel_all_open_orders_for_type(order_type):
     client.cancel_all_open_orders_for_type(order_type)
 
 
+def test_qty_call():
+    client = BinanceClient(test=True)
+    print(client.get_market_position())
+
+
 if __name__ == "__main__":
-    _stop_order(500)  # 1
+    # _stop_order(500)  # 1
     # get_live_orders(OrderType.stop_loss_limit) # 2
     # _cancel_all_open_orders_for_type(OrderType.stop_loss_limit) # 3
 
     # place_limit_order(price=500)
     # remove_all_stop_orders_()
-    # report_summary_position_risk()
+    test_qty_call()
+    report_summary_position_risk()

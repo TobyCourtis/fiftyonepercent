@@ -154,7 +154,8 @@ class BinanceClient:
                 return 0
             qty = 0
             for trade_info in trade_history:
-                qty += round(float(trade_info['qty']), precision)
+                trade_qty = float(trade_info['qty']) if trade_info['isBuyer'] == True else float(trade_info['qty']) * -1
+                qty += round(trade_qty, precision)
             return round(qty, precision)
 
         except ClientError as error:
