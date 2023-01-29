@@ -190,6 +190,7 @@ class BinanceClient:
                     index=symbol_data.columns).T
                 symbol_data = symbol_data.append(total_df)
                 pnl_df.append(symbol_data)
+
             pnl_df = pd.concat(pnl_df, axis=1)
             pnl_df.set_index('Symbol', inplace=True)
             pnl_df[['QTY', 'WAP', 'FEE', 'PnL']] = (pnl_df[['QTY', 'WAP', 'FEE', 'PnL']].astype(float)).round(1)
@@ -198,8 +199,9 @@ class BinanceClient:
             current_dir = os.path.dirname(os.path.realpath(__file__))
             pnl_snapshot_path = f"{current_dir}/../clients/current_pnl_snapshot.png"
             create_image_from_dataframe(pnl_df, pnl_snapshot_path, "PnL Summary")
-            slack_image_upload.upload_image(pnl_snapshot_path, "PnL",
-                                            f"PnL Tables - PnL: {round(total_df.loc[0, 'PnL'], 2)} Qty: {round(total_df.loc[0, 'QTY'], 2)}")
+            if not self.test:
+                slack_image_upload.upload_image(pnl_snapshot_path, "PnL",
+                                                f"PnL Tables - PnL: {round(total_df.loc[0, 'PnL'], 2)} Qty: {round(total_df.loc[0, 'QTY'], 2)}")
             return pnl_df
 
 
