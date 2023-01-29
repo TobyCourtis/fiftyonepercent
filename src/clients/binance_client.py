@@ -93,7 +93,7 @@ class BinanceClient:
                 order['Time'] = epoch_to_date(order_info['time'])
                 open_orders.append(order)
             open_orders = pd.DataFrame(open_orders)
-
+            open_orders.set_index('Symbol', inplace=True)
             current_dir = os.path.dirname(os.path.realpath(__file__))
             open_orders_path = f"{current_dir}/../clients/current_open_orders_snapshot.png"
             create_image_from_dataframe(open_orders, open_orders_path, "Open Orders")
