@@ -82,17 +82,18 @@ class BinanceClient:
                 return f"No live orders were found. Environment Test={self.test}"
             open_orders = []
             for order_info in response:
-                order = {}
-                order['OrderId'] = order_info['orderId']
-                order['Symbol'] = order_info['symbol']
-                order['Side'] = order_info['side']
-                order['Price'] = float(order_info['price'])
-                order['OrigQty'] = float(order_info['origQty'])
-                order['ExecutedQty'] = float(order_info['executedQty'])
-                order['Status'] = order_info['status']
-                order['timeInForce'] = order_info['timeInForce']
-                order['Type'] = order_info['type']
-                order['Time'] = epoch_to_date(order_info['time'])
+                order = {
+                    'OrderId': order_info['orderId'],
+                    'Symbol': order_info['symbol'],
+                    'Side': order_info['side'],
+                    'Price': float(order_info['price']),
+                    'OrigQty': float(order_info['origQty']),
+                    'ExecutedQty': float(order_info['executedQty']),
+                    'Status': order_info['status'],
+                    'timeInForce': order_info['timeInForce'],
+                    'Type': order_info['type'],
+                    'Time': epoch_to_date(order_info['time'])
+                }
                 open_orders.append(order)
             open_orders = pd.DataFrame(open_orders)
 
