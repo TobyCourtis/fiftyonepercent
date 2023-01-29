@@ -166,7 +166,7 @@ class BinanceClient:
                 )
             )
 
-    def position_summary(self, symbol_list=None):
+    def position_summary(self, symbol_list=None) -> pd.DataFrame:
         """
 
         Function to return the position and PnL of each coin holding
@@ -179,6 +179,10 @@ class BinanceClient:
             symbol = "ETHUSDT" if self.test else "ETHGBP"  # only ETH supported for now
             symbol_list = [symbol]
 
+        if len(symbol_list) == 0:
+            raise Exception("No input symbols found. Please provide no parameter or at least one symbol.")
+
+        total_df = None
         try:
             pnl_df = []
             for symbol in symbol_list:
