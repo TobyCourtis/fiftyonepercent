@@ -4,5 +4,6 @@
 **__pycache__**
 /src/test/_trial_temp
 /src/temporary_runner.py
-/src/clients/current_plot_snapshot.png
 /src/_trial_temp/
+/src/clients/*.png
+/src/examples/*.json

@@ -10,8 +10,8 @@ from binance.error import ClientError
 from binance.spot import Spot
 
 from src.clients.candlesticks import Candlesticks
-from src.clients.helpers import Side
-from src.notify import notifier
+from src.clients.helpers import Side, epoch_to_date, create_image_from_dataframe, OrderType, add_spacing
+from src.notify import notifier, slack_image_upload
 
 
 class BinanceClient:
@@ -65,42 +65,97 @@ class BinanceClient:
             else:
                 print(f"{i}: {acc_info[i]}")
 
-    def show_orders(self, symbol):
-        try:
-            response = self.client.get_orders(symbol, recvWindow=60000)
-            if len(response) == 0:
-                print("No orders were found")
-                return
-            for i in response:
-                print(i)
-        except ClientError as error:
-            print(
-                "Found error. status: {}, error code: {}, error message: {}".format(
-                    error.status_code, error.error_code, error.error_message
-                )
-            )
-
     """
     POSITION/PNL INFORMATION
     """
 
-    def get_market_position(self):
+    def show_open_orders(self, order_type_filter=None):
+
+        symbol = "ETHUSDT" if self.test else "ETHGBP"  # only ETH supported for now
+
+        try:
+            response = self.client.get_open_orders(symbol, recvWindow=60000)
+            if len(response) == 0:
+                if not self.test:
+                    notifier.slack_notify("No live orders",
+                                          "muted-dump")
+                return f"No live orders were found. Environment Test={self.test}"
+            open_orders = []
+            for order_info in response:
+                order = {}
+                order['OrderId'] = order_info['orderId']
+                order['Symbol'] = order_info['symbol']
+                order['Side'] = order_info['side']
+                order['Price'] = float(order_info['price'])
+                order['OrigQty'] = float(order_info['origQty'])
+                order['ExecutedQty'] = float(order_info['executedQty'])
+                order['Status'] = order_info['status']
+                order['timeInForce'] = order_info['timeInForce']
+                order['Type'] = order_info['type']
+                order['Time'] = epoch_to_date(order_info['time'])
+                open_orders.append(order)
+            open_orders = pd.DataFrame(open_orders)
+
+            if order_type_filter is not None:
+                param_type = type(order_type_filter)
+                if param_type != OrderType:
+                    raise TypeError(f"Parameter order_type_filter should be of type OrderType not {param_type}")
+                else:
+                    # drop rows if type does not match input param
+                    open_orders = open_orders.drop(open_orders[open_orders.Type != order_type_filter.value].index)
+
+                    if len(open_orders) == 0:
+                        if not self.test:
+                            notifier.slack_notify("No live orders",
+                                                  "muted-dump")
+                        return f"No live orders were found for order type {order_type_filter.value} Environment Test={self.test}"
+                    else:
+                        print(add_spacing(f"Showing all orders of type '{order_type_filter.value}':"))
+
+            open_orders.set_index('Symbol', inplace=True)
+
+            current_dir = os.path.dirname(os.path.realpath(__file__))
+            open_orders_path = f"{current_dir}/../clients/current_open_orders_snapshot.png"
+            create_image_from_dataframe(open_orders, open_orders_path, "Open Orders")
+            if not self.test:
+                slack_image_upload.upload_image(open_orders_path, "PnL", f"Number of Open Orders - {len(response)}")
+            return open_orders
+
+        except ClientError as error:
+            print(
+                "Unable to Pull Order - Found error. status: {}, error code: {}, error message: {}".format(
+                    error.status_code, error.error_code, error.error_message
+                )
+            )
+
+    def get_market_position(self, symbol="ETHUSDT"):
         """
 
         Function to return the current net position of the coin that is passed
 
         :return: float of position
         """
-        if self.test:
-            symbol = "ETHUSDT"
-        else:
-            return 0  # IP is blocked as of now so we have hardcoded 0
+        symbol = "ETHUSDT" if self.test else "ETHGBP"  # only ETH supported for now
+        precision = 8  # from exchange_info ETH precision is 8 for test and prod
 
-        trade_history = self.client.my_trades(symbol=symbol)
-        qty = 0
-        for trade_info in trade_history:
-            qty += float(trade_info['qty'])
-        return qty
+        if not self.test:
+            return 0  # TODO fix: IP is blocked as of now so we have hardcoded 0
+
+        try:
+            trade_history = self.client.my_trades(symbol=symbol, recvWindow=60000)
+            if len(trade_history) == 0:
+                return 0
+            qty = 0
+            for trade_info in trade_history:
+                qty += round(float(trade_info['qty']), precision)
+            return round(qty, precision)
+
+        except ClientError as error:
+            print(
+                "Unable to pull trades - Found error. status: {}, error code: {}, error message: {}".format(
+                    error.status_code, error.error_code, error.error_message
+                )
+            )
 
     def position_summary(self, symbol_list=["ETHUSDT"]):
         """
@@ -110,36 +165,53 @@ class BinanceClient:
         :param symbol_list: list of coins that you want included in the report
         :return: Dataframe showing the coins in the index and pnl in the columns. DF will include WAP.
         """
+        try:
+            pnl_df = []
+            for symbol in symbol_list:
+                trade_history = self.client.my_trades(symbol=symbol)
+                live_px = float(self.client.ticker_price(symbol=symbol)['price'])
+                symbol_data = []
+                for trade_info in trade_history:
+                    coin_data = {}
+                    coin_data['Symbol'] = trade_info['symbol']
+                    coin_data['QTY'] = float(trade_info['qty']) if trade_info['isBuyer'] == True else float(
+                        trade_info['qty']) * -1
+                    coin_data['WAP'] = float(trade_info['price']) * float(trade_info['qty'])
+                    coin_data['FEE'] = float(trade_info['commission'])
+                    coin_data['Side'] = 'Buy' if trade_info['isBuyer'] == True else 'Sell'  # 1 is buy and 0 Sell
+                    coin_data['PnL'] = ((live_px - float(trade_info['price'])) * float(coin_data['QTY'])) - float(
+                        trade_info['commission'])
+                    symbol_data.append(coin_data)
+                symbol_data = pd.DataFrame(symbol_data)
+                symbol_data = symbol_data.groupby(['Symbol', 'Side']).sum()
+                symbol_data['WAP'] = abs(symbol_data['WAP'] / symbol_data['QTY'])
+                symbol_data.reset_index(inplace=True)
+                total_df = pd.DataFrame(
+                    [symbol, 'Total', symbol_data.QTY.sum(), np.nan, symbol_data.FEE.sum(), symbol_data.PnL.sum()],
+                    index=symbol_data.columns).T
+                symbol_data = symbol_data.append(total_df)
+                pnl_df.append(symbol_data)
 
-        pnl_df = []
-        for symbol in symbol_list:
-            trade_history = self.client.my_trades(symbol=symbol)
-            live_px = float(self.client.ticker_price(symbol=symbol)['price'])
-            symbol_data = []
-            for trade_info in trade_history:
-                coin_data = {}
-                coin_data['Symbol'] = trade_info['symbol']
-                coin_data['qty'] = float(trade_info['qty']) if trade_info['isBuyer'] == True else float(
-                    trade_info['qty']) * -1
-                coin_data['WAP'] = float(trade_info['price']) * float(trade_info['qty'])
-                coin_data['Fee'] = float(trade_info['commission'])
-                coin_data['Side'] = 'Buy' if trade_info['isBuyer'] == True else 'Sell'  # 1 is buy and 0 Sell
-                coin_data['PnL'] = ((live_px - float(trade_info['price'])) * float(coin_data['qty'])) - float(
-                    trade_info['commission'])
-                symbol_data.append(coin_data)
-            symbol_data = pd.DataFrame(symbol_data)
-            symbol_data = symbol_data.groupby(['Symbol', 'Side']).sum()
-            symbol_data['WAP'] = abs(symbol_data['WAP'] / symbol_data['qty'])
-            symbol_data.reset_index(inplace=True)
-            total_df = pd.DataFrame(
-                [symbol, 'Total', symbol_data.qty.sum(), np.nan, symbol_data.Fee.sum(), symbol_data.PnL.sum()],
-                index=symbol_data.columns).T
+            pnl_df = pd.concat(pnl_df, axis=1)
+            pnl_df.set_index('Symbol', inplace=True)
+            pnl_df[['QTY', 'WAP', 'FEE', 'PnL']] = (pnl_df[['QTY', 'WAP', 'FEE', 'PnL']].astype(float)).round(1)
+            pnl_df = pnl_df.replace(np.nan, "-")
 
-            symbol_data = symbol_data.append(total_df)
-            pnl_df.append(symbol_data)
+            current_dir = os.path.dirname(os.path.realpath(__file__))
+            pnl_snapshot_path = f"{current_dir}/../clients/current_pnl_snapshot.png"
+            create_image_from_dataframe(pnl_df, pnl_snapshot_path, "PnL Summary")
+            if not self.test:
+                slack_image_upload.upload_image(pnl_snapshot_path, "PnL",
+                                                f"PnL Tables - PnL: {round(total_df.loc[0, 'PnL'], 2)} Qty: {round(total_df.loc[0, 'QTY'], 2)}")
+            return pnl_df
 
-        pnl_df = pd.concat(pnl_df, axis=1)
-        return pnl_df
+
+        except ClientError as error:
+            print(
+                "Unable to pull report summary - Found error. status: {}, error code: {}, error message: {}".format(
+                    error.status_code, error.error_code, error.error_message
+                )
+            )
 
     """
     MARKET INFORMATION
@@ -152,7 +224,8 @@ class BinanceClient:
                 print(f"\nETH balance: {coin['free']}")
 
     def avg_price(self):
-        avg_price = self.client.avg_price("ETHGBP")
+        symbol = "ETHUSDT" if self.test else "ETHGBP"  # only ETH supported for now
+        avg_price = self.client.avg_price(symbol)
         pprint(avg_price)
         return avg_price["price"]
 
@@ -265,6 +338,6 @@ class BinanceClient:
 if __name__ == "__main__":
     client = BinanceClient(test=True)
     client.market_order("ETHUSDT", Side.sell, 1)
-    print(client.position_risk())
+    print(client.position_summary())
 
     print("Finished and exited")
