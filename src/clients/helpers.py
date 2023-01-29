@@ -1,6 +1,11 @@
+import datetime as dt
 import math
+import os
 import time
 from enum import Enum
+
+import matplotlib.pyplot as plt
+import numpy as np
 
 """
 HELPER FUNCTIONS
@@ -51,6 +56,46 @@ format_markdown = lambda markdown_table: "```\n" + markdown_table.to_markdown() 
 class Side(Enum):
     buy = 'BUY'
     sell = 'SELL'
+
+
+def create_image_from_dataframe(df, file_path, name):
+    fig_background_color = 'lightgrey'
+    fig_border = 'black'
+
+    plt.figure(linewidth=2,
+               edgecolor=fig_border,
+               facecolor=fig_background_color,
+               tight_layout={'pad': 1},
+               )
+    rcolors = plt.cm.Oranges(np.full(len(df.index), 0.1))
+    ccolors = plt.cm.Oranges(np.full(len(df.columns), 0.1))
+
+    table = plt.table(cellText=df.values,
+                      rowLabels=df.index,
+                      colLabels=df.columns,
+                      rowColours=rcolors,
+                      colColours=ccolors,
+                      loc='center')
+    table.scale(1, 1.5)
+    plt.suptitle(name)
+    # Hide axes
+    ax = plt.gca()
+    ax.get_xaxis().set_visible(False)
+    ax.get_yaxis().set_visible(False)
+    plt.box(on=None)
+    plt.draw()
+    table.set_fontsize(11)
+
+    footer_text = dt.datetime.today().strftime("%d-%b-%Y %HH:%MM")
+    plt.figtext(0.95, 0.05, footer_text, horizontalalignment='right', size=6, weight='light')
+
+    current_dir = os.path.dirname(os.path.realpath(__file__))
+    fig = plt.gcf()
+    plt.savefig(file_path,
+                edgecolor=fig.get_edgecolor(),
+                facecolor=fig.get_facecolor(),
+                dpi=150
+                )
 
 
 def bruce_buffer():

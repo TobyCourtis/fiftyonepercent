@@ -106,6 +106,8 @@ def notify_ma_crossover(window_min, window_max, units):
         if current_minutes_value % 10 == 0:  # every 10 minutes save current snapshot
             all_candles.create_crossover_graph(window_min, window_max, units)
             slack_image_upload.upload_current_plot(window_min, window_max, units)
+            client.position_summary()
+            client.show_open_orders()
 
         # TODO every 10 minutes send photo of graph to slack
 

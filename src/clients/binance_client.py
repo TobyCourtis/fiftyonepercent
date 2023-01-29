@@ -10,8 +10,8 @@ from binance.error import ClientError
 from binance.spot import Spot
 
 from src.clients.candlesticks import Candlesticks
-from src.clients.helpers import Side, format_markdown, epoch_to_date
-from src.notify import notifier
+from src.clients.helpers import Side, epoch_to_date, create_image_from_dataframe
+from src.notify import notifier, slack_image_upload
 
 
 class BinanceClient:
@@ -70,7 +70,6 @@ class BinanceClient:
     """
 
     def show_open_orders(self, symbol="ETHUSDT"):
-
         if self.test:
             symbol = "ETHUSDT"
 
@@ -80,7 +79,7 @@ class BinanceClient:
                 notifier.slack_notify("No live orders",
                                       "muted-dump")
                 return np.nan
-            orders_out = []
+            open_orders = []
             for order_info in response:
                 order = {}
                 order['Symbol'] = order_info['symbol']
@@ -92,13 +91,13 @@ class BinanceClient:
                 order['timeInForce'] = order_info['timeInForce']
                 order['Type'] = order_info['type']
                 order['Time'] = epoch_to_date(order_info['time'])
-                orders_out.append(order)
-            orders_out = pd.DataFrame(orders_out)
-            orders_out['Symbol - Side'] = orders_out.apply(lambda x: '%s - %s' % (x['Symbol'], x['Side']), axis=1)
-            orders_out.set_index('Symbol - Side', inplace=True)
-            orders_out.drop(['Symbol', 'Side'], axis=1, inplace=True)
-            notifier.slack_notify(f"\nPnL Table\n {format_markdown(orders_out.round(2))}", "muted-dump")
-            return orders_out
+                open_orders.append(order)
+            open_orders = pd.DataFrame(open_orders)
+
+            current_dir = os.path.dirname(os.path.realpath(__file__))
+            open_orders_path = f"{current_dir}/../clients/current_open_orders_snapshot.png"
+            create_image_from_dataframe(open_orders, open_orders_path, "Open Orders")
+            slack_image_upload.upload_image(open_orders_path, "PnL", f"Number of Open Orders - {len(response)}")
 
         except ClientError as error:
             print(
@@ -170,12 +169,15 @@ class BinanceClient:
                 symbol_data = symbol_data.append(total_df)
                 pnl_df.append(symbol_data)
             pnl_df = pd.concat(pnl_df, axis=1)
-            pnl_df['Symbol - Side'] = pnl_df.apply(lambda x: '%s - %s' % (x['Symbol'], x['Side']), axis=1)
-            pnl_df.set_index('Symbol - Side', inplace=True)
-            pnl_df.drop(['Symbol', 'Side'], axis=1, inplace=True)
-            pnl_df = pnl_df.astype(float)
+            pnl_df.set_index('Symbol', inplace=True)
+            pnl_df[['QTY', 'WAP', 'FEE', 'PnL']] = (pnl_df[['QTY', 'WAP', 'FEE', 'PnL']].astype(float)).round(1)
             pnl_df = pnl_df.replace(np.nan, "-")
-            notifier.slack_notify(f"\nPnL Table\n {format_markdown(pnl_df.round(2))}", "muted-dump")
+
+            current_dir = os.path.dirname(os.path.realpath(__file__))
+            pnl_snapshot_path = f"{current_dir}/../clients/current_pnl_snapshot.png"
+            create_image_from_dataframe(pnl_df, pnl_snapshot_path, "PnL Summary")
+            slack_image_upload.upload_image(pnl_snapshot_path, "PnL",
+                                            f"PnL Tables - PnL: {round(total_df.loc[0, 'PnL'], 2)} Qty: {round(total_df.loc[0, 'QTY'], 2)}")
             return pnl_df
 
 
