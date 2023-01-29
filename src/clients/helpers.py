@@ -104,7 +104,7 @@ def create_image_from_dataframe(df, file_path, name):
     plt.savefig(file_path,
                 edgecolor=fig.get_edgecolor(),
                 facecolor=fig.get_facecolor(),
-                dpi=150
+                dpi=500
                 )
     print(add_spacing(f"Saved image to {file_path}"))
 
