@@ -223,7 +223,8 @@ class BinanceClient:
                 print(f"\nETH balance: {coin['free']}")
 
     def avg_price(self):
-        avg_price = self.client.avg_price("ETHGBP")
+        symbol = "ETHUSDT" if self.test else "ETHGBP"  # only ETH supported for now
+        avg_price = self.client.avg_price(symbol)
         pprint(avg_price)
         return avg_price["price"]
 

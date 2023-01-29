@@ -7,7 +7,7 @@ Examples will include buying, selling, plotting and more.
 import json
 
 from src.clients.binance_client import BinanceClient
-from src.clients.helpers import Side
+from src.clients.helpers import Side, OrderType
 
 
 def create_ma_crossover():
@@ -57,6 +57,11 @@ def save_exchange_info():
     with open(full_name, 'w', encoding='utf-8') as f:
         json.dump(client.exchange_info(), f, ensure_ascii=False, indent=4)
     print(f"Saved exchange info to ./{full_name}")
+
+
+def average_price():
+    client = BinanceClient(test=True)
+    client.avg_price()
 
 
 if __name__ == "__main__":
