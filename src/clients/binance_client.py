@@ -122,6 +122,7 @@ class BinanceClient:
             current_dir = os.path.dirname(os.path.realpath(__file__))
             open_orders_path = f"{current_dir}/../clients/current_open_orders_snapshot.png"
 
+            print(open_orders)
             if save_image:
                 create_image_from_dataframe(open_orders, open_orders_path, "Open Orders")
             if not self.test:
@@ -208,6 +209,8 @@ class BinanceClient:
             current_dir = os.path.dirname(os.path.realpath(__file__))
             pnl_snapshot_path = f"{current_dir}/../clients/current_pnl_snapshot.png"
             create_image_from_dataframe(pnl_df, pnl_snapshot_path, "PnL Summary")
+
+            print(pnl_df)
             if not self.test:
                 slack_image_upload.upload_image(pnl_snapshot_path, "PnL",
                                                 f"PnL Tables - PnL: {round(total_df.loc[0, 'PnL'], 2)} Qty: {round(total_df.loc[0, 'QTY'], 2)}")

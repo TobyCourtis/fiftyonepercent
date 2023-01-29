@@ -89,7 +89,9 @@ class Candlesticks:
         plt.legend()
         if save:
             current_dir = os.path.dirname(os.path.realpath(__file__))
-            plt.savefig(f"{current_dir}/current_plot_snapshot.png")
+            file_path = f"{current_dir}/current_plot_snapshot.png"
+            print(f"Saved crossover image to {file_path}")
+            plt.savefig(file_path)
         else:
             plt.show()
 

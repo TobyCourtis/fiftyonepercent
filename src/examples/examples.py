@@ -81,5 +81,5 @@ if __name__ == "__main__":
 
     # place_limit_order(price=500)
     # remove_all_stop_orders_()
-    test_qty_call()
-    report_summary_position_risk()
+    # test_qty_call()
+    get_live_orders()

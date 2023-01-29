@@ -65,7 +65,7 @@ def notify_ma_crossover(window_min, window_max, units):
                 f"windowMin={window_min}, "
                 f"windowMax={window_max}, "
                 f"units={units}",
-                "crypto-trading")
+                "prod-trades")
         elif (position == -1) & (qty > 0):
             # Sell signal + position on coin. Okay to sell. Make Trade and clear stop signal.
             notifier.slack_notify(
@@ -76,7 +76,7 @@ def notify_ma_crossover(window_min, window_max, units):
                 f"windowMin={window_min}, "
                 f"windowMax={window_max}, "
                 f"units={units}",
-                "crypto-trading")
+                "prod-trades")
 
         elif (position == 1) & (qty > 0.0005):
             # Buy signal + position on coin. Don't buy more, previous sell missed and stop not hit. Wait for next sell.
@@ -88,7 +88,7 @@ def notify_ma_crossover(window_min, window_max, units):
                 f"windowMin={window_min}, "
                 f"windowMax={window_max}, "
                 f"units={units}",
-                "crypto-trading")
+                "prod-trades")
         elif (position == -1) & (qty == 0):
             # Sell signal + no position on coin. Don't sell and go short. Previous buy missed, wait for the next.
             notifier.slack_notify(
@@ -99,7 +99,7 @@ def notify_ma_crossover(window_min, window_max, units):
                 f"windowMin={window_min}, "
                 f"windowMax={window_max}, "
                 f"units={units}",
-                "crypto-trading")
+                "prod-trades")
         else:
             print('\nNo Signal - Do not buy or sell\n')
             pass
@@ -111,8 +111,6 @@ def notify_ma_crossover(window_min, window_max, units):
             slack_image_upload.upload_current_plot(window_min, window_max, units)
             client.position_summary()
             client.show_open_orders()
-
-        # TODO every 10 minutes send photo of graph to slack
 
         # TODO breakpoints or fetch times could cause the wait to be more than 1 minute
         #  if multiple candles have been released then we need to check all of the
