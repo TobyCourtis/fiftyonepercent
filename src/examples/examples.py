@@ -37,6 +37,11 @@ def get_test_market_position():
     print(client.get_market_position())
 
 
+def get_prod_market_position():
+    client = BinanceClient(test=False)
+    print(client.get_market_position())
+
+
 def place_limit_order(price):
     client = BinanceClient(test=True)
     client.place_limit_order(side=Side.buy, price=price)
@@ -79,7 +84,12 @@ if __name__ == "__main__":
     # get_live_orders(OrderType.stop_loss_limit) # 2
     # _cancel_all_open_orders_for_type(OrderType.stop_loss_limit) # 3
 
+    # place_testnet_market_order()
+    # get_test_market_position()
+
     # place_limit_order(price=500)
     # remove_all_stop_orders_()
     # test_qty_call()
-    report_summary_position_risk()
+    # report_summary_position_risk()
+
+    get_prod_market_position()

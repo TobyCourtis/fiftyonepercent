@@ -328,7 +328,7 @@ class BinanceClient:
             "side": side.value,
             "type": "MARKET",
             "quantity": str(qty),
-            "timestamp": int(round(dt.datetime.today().timestamp()))
+            "timestamp": int(round(dt.datetime.now().timestamp()))
         }
 
         print(f"Order to {side.value} {symbol}:")
