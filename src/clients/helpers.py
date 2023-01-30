@@ -68,6 +68,11 @@ class OrderType(Enum):
     take_profit_limit = "TAKE_PROFIT_LIMIT"
 
 
+class PositionType(Enum):
+    bought = "bought"
+    sold = "sold"
+
+
 def create_image_from_dataframe(df, file_path, name):
     fig_background_color = 'lightgrey'
     fig_border = 'black'

@@ -11,7 +11,7 @@ from binance.spot import Spot
 from pandas import DataFrame
 
 from src.clients.candlesticks import Candlesticks
-from src.clients.helpers import Side, epoch_to_date, create_image_from_dataframe, OrderType, add_spacing
+from src.clients.helpers import Side, epoch_to_date, create_image_from_dataframe, OrderType, add_spacing, PositionType
 from src.notify import notifier, slack_image_upload
 
 
@@ -147,15 +147,19 @@ class BinanceClient:
             symbol = "ETHUSDT" if self.test else "ETHGBP"  # only ETH supported for now
         precision = 8  # from exchange_info ETH precision is 8 for test and prod
 
+        qty = 0
         try:
             trade_history = self.client.my_trades(symbol=symbol, recvWindow=60000)
             if len(trade_history) == 0:
+                print(add_spacing(f"Current qty: {0}"))
                 return 0
-            qty = 0
+
             for trade_info in trade_history:
                 trade_qty = float(trade_info['qty']) if trade_info['isBuyer'] == True else float(trade_info['qty']) * -1
                 qty += round(trade_qty, precision)
-            return round(qty, precision)
+            rounded_qty = round(qty, precision)
+            print(add_spacing(f"Current qty: {rounded_qty}"))
+            return rounded_qty
 
         except ClientError as error:
             print(
@@ -163,6 +167,16 @@ class BinanceClient:
                     error.status_code, error.error_code, error.error_message
                 )
             )
+
+    def get_market_position_type(self, symbol=None) -> PositionType:
+        """
+        Return PositionType meaning are we currently in a state of BOUGHT or SOLD our holdings
+
+        :param symbol: Symbol
+        :return: PositionType (bought OR sold)
+        """
+        threshold = 0.00076  # current value of £1 in ETHGBP
+        return PositionType.bought if self.get_market_position(symbol) < threshold else PositionType.sold
 
     def position_summary(self, symbol_list=None) -> pd.DataFrame:
         """

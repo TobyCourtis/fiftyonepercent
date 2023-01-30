@@ -1,7 +1,7 @@
 import time
 
 from binance_client import BinanceClient
-from helpers import epoch_to_date, epoch_to_minutes, bruce_buffer
+from helpers import epoch_to_date, epoch_to_minutes, bruce_buffer, add_spacing, PositionType, Side
 from src.notify import notifier, slack_image_upload
 
 
@@ -26,14 +26,13 @@ def notify_ma_crossover(window_min, window_max, units):
 
     while True:
         new_start_time = all_candles.closeTime[-1]  # start from last candle closing time
-        print(f"\nFetching new candles with start time: {epoch_to_date(new_start_time)}\n")
+        print(add_spacing(f"Fetching new candles with start time: {epoch_to_date(new_start_time)}"))
 
         client = BinanceClient(test=False)  # needed as a connection keeps being reset with same object instance
         new_candles = client.get_klines(startTime=new_start_time)
         if len(new_candles) == 0:
-            print("\nNO new candles found, waiting one minute ...")
+            print(add_spacing("NO new candles found, waiting one minute ..."))
             time.sleep(60)
-            print("...Done waiting\n")
             bruce_buffer()
             continue
 
@@ -43,18 +42,14 @@ def notify_ma_crossover(window_min, window_max, units):
 
         # TODO we waste time computing entire dataframe here (should compute only last data point ideally)
         ma_crossover_dataframe = all_candles.create_ma_crossover_dataframe(window_min, window_max, units)
-        print("\nLatest MA crossover data:")
+        print("Latest MA crossover data:")
         print(ma_crossover_dataframe.tail())
-        print("\n")
 
-        position = all_candles.get_current_position(ma_crossover_dataframe)
-        qty = client.get_market_position()
-
-        print(f"\nCurrent qty: {qty}")
-        print("\n")
+        suggested_position = all_candles.suggested_position_type(ma_crossover_dataframe)
+        current_position = client.get_market_position_type()
 
         latest_row = ma_crossover_dataframe.iloc[-1]
-        if (position == 1) & (qty == 0):
+        if (suggested_position == Side.buy) & (current_position == PositionType.sold):
             # Buy signal + no position on coin. Okay to buy. Make Trade add stop signal.
             notifier.slack_notify(
                 f"Buy Signal - Order Executed. "
@@ -65,7 +60,7 @@ def notify_ma_crossover(window_min, window_max, units):
                 f"windowMax={window_max}, "
                 f"units={units}",
                 "prod-trades")
-        elif (position == -1) & (qty > 0):
+        elif (suggested_position == Side.sell) & (current_position == PositionType.bought):
             # Sell signal + position on coin. Okay to sell. Make Trade and clear stop signal.
             notifier.slack_notify(
                 f"Sell Signal - Order Executed. "
@@ -77,7 +72,8 @@ def notify_ma_crossover(window_min, window_max, units):
                 f"units={units}",
                 "prod-trades")
 
-        elif (position == 1) & (qty > 0.0005):
+        elif (suggested_position == Side.buy) & (
+                current_position == PositionType.bought):
             # Buy signal + position on coin. Don't buy more, previous sell missed and stop not hit. Wait for next sell.
             notifier.slack_notify(
                 f"Buy Signal - Not Executed. Qty greater than 0 Already. "
@@ -88,7 +84,7 @@ def notify_ma_crossover(window_min, window_max, units):
                 f"windowMax={window_max}, "
                 f"units={units}",
                 "prod-trades")
-        elif (position == -1) & (qty == 0):
+        elif (suggested_position == Side.sell) & (current_position == PositionType.sold):
             # Sell signal + no position on coin. Don't sell and go short. Previous buy missed, wait for the next.
             notifier.slack_notify(
                 f"Sell Signal - Not Executed. Qty 0 Already. "
@@ -100,21 +96,18 @@ def notify_ma_crossover(window_min, window_max, units):
                 f"units={units}",
                 "prod-trades")
         else:
-            print('\nNo Signal - Do not buy or sell\n')
+            print(add_spacing('No Signal - Do not buy or sell'))
             pass
 
         current_minutes_value = epoch_to_minutes(new_start_time)
-
         if current_minutes_value % 10 == 0:  # every 10 minutes save current snapshot
             all_candles.create_crossover_graph(window_min, window_max, units)
             slack_image_upload.upload_current_plot(window_min, window_max, units)
             client.position_summary()
             client.show_open_orders()
 
-        print("\nWaiting 1 minute for new candles ...")
+        print(add_spacing("Waiting 1 minute for new candles ..."))
         time.sleep(60)
-        print("...Done waiting\n")
-
         bruce_buffer()
 
 
