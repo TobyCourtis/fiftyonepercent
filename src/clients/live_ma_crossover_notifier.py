@@ -41,8 +41,7 @@ def notify_ma_crossover(window_min, window_max, units):
 
         all_candles.shorten()  # shorten candles to past 30 days of data
 
-        # TODO we waste time computing entire dataframe everytime candles are added, functionality just to compute
-        #  the newest data point would be optimal
+        # TODO we waste time computing entire dataframe here (should compute only last data point ideally)
         ma_crossover_dataframe = all_candles.create_ma_crossover_dataframe(window_min, window_max, units)
         print("\nLatest MA crossover data:")
         print(ma_crossover_dataframe.tail())
@@ -111,10 +110,6 @@ def notify_ma_crossover(window_min, window_max, units):
             slack_image_upload.upload_current_plot(window_min, window_max, units)
             client.position_summary()
             client.show_open_orders()
-
-        # TODO breakpoints or fetch times could cause the wait to be more than 1 minute
-        #  if multiple candles have been released then we need to check all of the
-        #  corresponding ma_crossover_dataframe rows for 'Position' buy or sell
 
         print("\nWaiting 1 minute for new candles ...")
         time.sleep(60)
