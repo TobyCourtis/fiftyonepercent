@@ -16,6 +16,12 @@ def create_ma_crossover():
     all_candles.create_crossover_graph(1, 2, units="days", save=False)
 
 
+def test_create_ma_crossover():
+    client = BinanceClient(test=True)
+    all_candles = client.get_klines(timeframe="1m", days=1)
+    all_candles.create_crossover_graph(1, 2, units="hours", save=False)
+
+
 def place_testnet_market_order():
     client = BinanceClient(test=True)
     client.market_order("ETHUSDT", Side.sell, 1)
@@ -80,16 +86,4 @@ def test_qty_call():
 
 
 if __name__ == "__main__":
-    # _stop_order(500)  # 1
-    # get_live_orders(OrderType.stop_loss_limit) # 2
-    # _cancel_all_open_orders_for_type(OrderType.stop_loss_limit) # 3
-
-    # place_testnet_market_order()
-    # get_test_market_position()
-
-    # place_limit_order(price=500)
-    # remove_all_stop_orders_()
-    # test_qty_call()
-    # report_summary_position_risk()
-
-    get_prod_market_position()
+    test_create_ma_crossover()

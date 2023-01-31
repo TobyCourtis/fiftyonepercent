@@ -79,7 +79,7 @@ class BinanceClient:
             if len(response) == 0:
                 if not self.test:
                     notifier.slack_notify("No live orders",
-                                          "muted-dump")
+                                          "prod-trades")
                 print(f"No live orders were found. Environment Test={self.test}, OrderTypeFilter={order_type_filter}")
                 return pd.DataFrame([])
             open_orders = []
@@ -110,7 +110,7 @@ class BinanceClient:
                     if len(open_orders) == 0:
                         if not self.test:
                             notifier.slack_notify("No live orders",
-                                                  "muted-dump")
+                                                  "prod-trades")
                         print(f"No live orders were found for order type {order_type_filter.value} "
                               f"Environment Test={self.test}")
                         return open_orders
@@ -259,6 +259,7 @@ class BinanceClient:
         if symbol is None:
             symbol = "ETHUSDT" if self.test else "ETHGBP"  # only ETH supported for now
         avg_price = self.client.avg_price(symbol)
+        print("Average price now:")
         pprint(avg_price)
         return avg_price["price"]
 
@@ -333,10 +334,6 @@ class BinanceClient:
         if symbol is None:
             symbol = "ETHUSDT" if self.test else "ETHGBP"  # only ETH supported for now
 
-        if not self.test:
-            print("Buying is disabled outside of test mode")
-            exit()
-
         if not isinstance(side, Side):
             raise TypeError('Side must be Equal to BUY or SELL')
 
@@ -360,7 +357,8 @@ class BinanceClient:
                 qty += float(fill['qty'])
             wap = wap / qty
             order_message = "Order filled - qty: %s price: %s" % (round(qty, 2), round(wap, 2))
-            notifier.slack_notify(order_message, "crypto-trading")
+            if not self.test:
+                notifier.slack_notify(order_message, "prod-trades")
             return order_message
         except ClientError as error:
             print(
@@ -462,7 +460,7 @@ class BinanceClient:
                   f"type={res['type']} " \
                   f"side={res['side']}"
             if not self.test:
-                notifier.slack_notify(msg)
+                notifier.slack_notify(msg, "prod-trades")
             print(msg)
 
         return f"Cancelled all orders of type {order_type}"
