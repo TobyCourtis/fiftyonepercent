@@ -175,8 +175,8 @@ class BinanceClient:
         :param symbol: Symbol
         :return: PositionType (bought OR sold)
         """
-        threshold = 0.00076  # current value of £1 in ETHGBP
-        return PositionType.bought if self.get_market_position(symbol) < threshold else PositionType.sold
+        threshold = 0.00076  # £1 buys this much ETH
+        return PositionType.sold if self.get_market_position(symbol) < threshold else PositionType.bought
 
     def position_summary(self, symbol_list=None) -> pd.DataFrame:
         """
