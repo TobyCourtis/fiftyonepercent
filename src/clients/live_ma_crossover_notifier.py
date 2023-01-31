@@ -51,6 +51,7 @@ def notify_ma_crossover(window_min, window_max, units, test=True):
 
         latest_row = ma_crossover_dataframe.iloc[-1]
 
+        print(add_spacing(f"Current position: {current_position}. Suggested position: {suggested_position}"))
         if (suggested_position == Side.buy) & (current_position == PositionType.sold):
             """
             BUY
