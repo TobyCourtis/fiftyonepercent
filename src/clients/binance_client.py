@@ -255,8 +255,9 @@ class BinanceClient:
             if coin["coin"] == symbol:
                 print(f"\nETH balance: {coin['free']}")
 
-    def avg_price(self):
-        symbol = "ETHUSDT" if self.test else "ETHGBP"  # only ETH supported for now
+    def avg_price(self, symbol=None):
+        if symbol is None:
+            symbol = "ETHUSDT" if self.test else "ETHGBP"  # only ETH supported for now
         avg_price = self.client.avg_price(symbol)
         pprint(avg_price)
         return avg_price["price"]
@@ -328,7 +329,9 @@ class BinanceClient:
     TRADE FUNCTIONS
     """
 
-    def market_order(self, symbol, side: Side, qty: float):
+    def market_order(self, side: Side, qty: float, symbol=None):
+        if symbol is None:
+            symbol = "ETHUSDT" if self.test else "ETHGBP"  # only ETH supported for now
 
         if not self.test:
             print("Buying is disabled outside of test mode")
@@ -340,7 +343,7 @@ class BinanceClient:
         params = {
             "symbol": symbol,
             "side": side.value,
-            "type": "MARKET",
+            "type": OrderType.market.value,
             "quantity": str(qty),
             "timestamp": int(round(dt.datetime.now().timestamp()))
         }
@@ -381,7 +384,7 @@ class BinanceClient:
         params = {
             "symbol": symbol,
             "side": side.value,
-            "type": "LIMIT",
+            "type": OrderType.limit.value,
             "quantity": quantity,  # we will have to dynamically buy quantity based on price we have. Rounding important
             "timestamp": int(round(dt.datetime.now().timestamp())),
             "price": price,
@@ -404,11 +407,11 @@ class BinanceClient:
         symbol = "ETHUSDT" if self.test else "ETHGBP"  # only ETH supported for now
 
         quantity = str(self.get_market_position())  # get quantity of ALL of our current holdings
-        price = stop_price * 0.90
+        price = stop_price * 0.95
         params = {
             "symbol": symbol,
             "side": Side.sell.value,  # for now always a sell order
-            "type": "STOP_LOSS_LIMIT",
+            "type": OrderType.stop_loss_limit.value,
             "quantity": quantity,
             "timestamp": int(round(dt.datetime.now().timestamp())),
             "timeInForce": "GTC",  # place stop until we remove
@@ -488,7 +491,7 @@ class BinanceClient:
 
 if __name__ == "__main__":
     client = BinanceClient(test=True)
-    client.market_order("ETHUSDT", Side.sell, 1)
+    client.market_order(Side.sell, 1)
     print(client.position_summary())
 
     print("Finished and exited")
