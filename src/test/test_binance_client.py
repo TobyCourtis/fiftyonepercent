@@ -64,7 +64,7 @@ class TestBinanceClient(unittest.TestCase):
         with patch.object(tested_binance_client, 'client', mocked_spot_class):
             self.assertEqual(tested_binance_client.client, mocked_spot_class)
 
-            actual_order_message = tested_binance_client.market_order("ETHUSDT", Side.sell, 1)
+            actual_order_message = tested_binance_client.market_order(Side.sell, 1, "ETHUSDT")
             expected_order_message = "Order filled - qty: 6.0 price: 54.17"
 
             self.assertEqual(actual_order_message, expected_order_message)
