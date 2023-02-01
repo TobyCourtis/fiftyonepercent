@@ -1,7 +1,7 @@
 from src.clients.helpers import Side, OrderType
 from src.notify import notifier, slack_image_upload
 
-STOP_LOSS_MULTIPLIER = 0.80
+STOP_LOSS_MULTIPLIER = 0.9
 ETH_PRECISION = 8
 
 
@@ -23,8 +23,8 @@ def buy(window_min, window_max, units, latest_row, client):
 
     try:
         # 1. Buy all
-        full_qty = client.get_market_position()
-        client.market_order(Side.buy, full_qty)
+        full_quantity_fiat = client.coin_info("GBP")
+        client.market_order(Side.buy, full_quantity_fiat)
         # 2. Remove stops
         client.cancel_all_open_orders_for_type(OrderType.stop_loss_limit)
         # 3. Replace stops
@@ -41,8 +41,8 @@ def sell(window_min, window_max, units, latest_row, client):
 
     try:
         # 1. Sell all
-        full_qty = client.get_market_position()
-        client.market_order(Side.sell, full_qty)
+        full_quantity_crypto = client.get_market_position()
+        client.market_order(Side.sell, full_quantity_crypto)
         # 2. Remove all stops
         client.cancel_all_open_orders_for_type(OrderType.stop_loss_limit)
     except Exception as e:
