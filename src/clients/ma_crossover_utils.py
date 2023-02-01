@@ -2,6 +2,7 @@ from src.clients.helpers import Side, OrderType
 from src.notify import notifier, slack_image_upload
 
 STOP_LOSS_MULTIPLIER = 0.80
+ETH_PRECISION = 8
 
 
 def notify_current_transaction(message, latest_row, units, window_max, window_min):
@@ -27,7 +28,7 @@ def buy(window_min, window_max, units, latest_row, client):
         # 2. Remove stops
         client.cancel_all_open_orders_for_type(OrderType.stop_loss_limit)
         # 3. Replace stops
-        stop_price = client.avg_price() * STOP_LOSS_MULTIPLIER
+        stop_price = round(client.avg_price() * STOP_LOSS_MULTIPLIER, ETH_PRECISION)
         client.place_stop_order(stop_price)
     except Exception as e:
         print(f"Exception: {e}")
