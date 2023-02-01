@@ -249,19 +249,27 @@ class BinanceClient:
     MARKET INFORMATION
     """
 
-    def coin_info(self, symbol):
+    def coin_info(self, symbol=None) -> float:
+        if self.test:
+            raise Exception("This function is not supported in test environment")
+
+        if symbol is None:
+            symbol = "ETHGBP"  # only ETH supported for now
+
         coin_info = self.client.coin_info()
         for coin in coin_info:
             if coin["coin"] == symbol:
-                print(f"\nETH balance: {coin['free']}")
+                print(add_spacing(f"{symbol} balance: {coin['free']}"))
+                return float(coin['free'])
+        return 0.0
 
-    def avg_price(self, symbol=None):
+    def avg_price(self, symbol=None) -> float:
         if symbol is None:
             symbol = "ETHUSDT" if self.test else "ETHGBP"  # only ETH supported for now
-        avg_price = self.client.avg_price(symbol)
-        print("Average price now:")
-        pprint(avg_price)
-        return avg_price["price"]
+        avg_price_response = self.client.avg_price(symbol)
+        avg_price = float(avg_price_response["price"])
+        print(f"Average price now: {avg_price}")
+        return avg_price  # does not need rounding as it's straight from Binance
 
     def ticker_price(self, symbol="ETHUSDT"):
         print(self.client.ticker_price(symbol=symbol))

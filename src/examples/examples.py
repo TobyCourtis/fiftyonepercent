@@ -24,7 +24,7 @@ def test_create_ma_crossover():
 
 def place_testnet_market_order():
     client = BinanceClient(test=True)
-    client.market_order("ETHUSDT", Side.sell, 1)
+    client.market_order(Side.sell, 1, "ETHUSDT")
     print(client.position_summary())
 
 
@@ -80,10 +80,15 @@ def _cancel_all_open_orders_for_type(order_type):
     client.cancel_all_open_orders_for_type(order_type)
 
 
-def test_qty_call():
-    client = BinanceClient(test=True)
-    print(client.get_market_position())
+def _coin_info_GBP():
+    client = BinanceClient(test=False)
+    print(client.coin_info("GBP"))
+
+
+def _coin_info_ETH():
+    client = BinanceClient(test=False)
+    print(client.coin_info())
 
 
 if __name__ == "__main__":
-    test_create_ma_crossover()
+    _coin_info_GBP()
