@@ -446,7 +446,7 @@ class BinanceClient:
         :return: Message
         """
         if order_type is None:
-            self.cancel_all_open_orders()
+            return self.cancel_all_open_orders()
 
         symbol = "ETHUSDT" if self.test else "ETHGBP"  # only ETH supported for now
 
