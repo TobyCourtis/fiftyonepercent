@@ -554,7 +554,7 @@ class BinanceClient:
 
     def cancel_all_open_orders(self):
         """
-        Cancells all orders regardless of type currently for Ethereum only
+        Cancels all orders regardless of type currently for Ethereum only
 
         :return: Response from Binance API
         """
