@@ -55,7 +55,7 @@ class BinanceClient:
     ACCOUNT INFORMATION
     """
 
-    def account_info(self):
+    def all_account_info(self):
         print("Account Info")
         acc_info = self.client.account(recvWindow=60000)  # TODO time sync and lower recvWindow
         for i in acc_info:
@@ -65,6 +65,23 @@ class BinanceClient:
                     pprint(currency)
             else:
                 print(f"{i}: {acc_info[i]}")
+
+    def account_balance_by_symbol(self, symbol="ETH") -> float:
+        """
+
+        :param symbol: Symbol (Note in account balance, the raw crypto symbol is used e.g. ETH not ETHGBP)
+        :return: float for account balance of input symbol
+        """
+        account_info = self.client.account(recvWindow=60000)
+        for key, value in account_info.items():
+            if key == 'balances':
+                for balance in value:
+                    if balance['asset'] == symbol:
+                        available_balance = float(balance['free'])
+                        print(f"Balance ({symbol}): {available_balance}")
+                        return available_balance
+        print(f"No balance found for {symbol}")
+        return 0.0
 
     """
     POSITION/PNL INFORMATION
