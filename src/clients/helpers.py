@@ -88,6 +88,15 @@ class PositionType(Enum):
         return enum_equality_check(self, other)
 
 
+class LastNotifiedState(Enum):
+    avoid_repeat_buy = "avoid_repeat_buy"
+    avoid_repeat_sell = "avoid_repeat_sell"
+    un_notified = "un_notified"
+
+    def __eq__(self, other):
+        return enum_equality_check(self, other)
+
+
 def round_down_to_decimal_place(input_float, decimal_points):
     decimal_to_int_factor = (10 ** decimal_points)
     return ((input_float * 10 ** decimal_points) // 1) / decimal_to_int_factor

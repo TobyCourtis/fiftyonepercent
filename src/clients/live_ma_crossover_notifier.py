@@ -1,7 +1,7 @@
 import time
 
 from binance_client import BinanceClient
-from helpers import epoch_to_date, epoch_to_minutes, bruce_buffer, add_spacing, PositionType, Side
+from helpers import epoch_to_date, epoch_to_minutes, bruce_buffer, add_spacing, PositionType, Side, LastNotifiedState
 from ma_crossover_utils import notify_current_transaction, send_update_snapshot, buy, sell
 
 
@@ -24,6 +24,8 @@ def notify_ma_crossover(window_min, window_max, units, test=True):
 
     # initialise 30 days of candles
     all_candles = client.get_klines(days=1)
+
+    last_notified_state = LastNotifiedState.un_notified
 
     while True:
         new_start_time = all_candles.closeTime[-1]  # start from last candle closing time
@@ -57,12 +59,14 @@ def notify_ma_crossover(window_min, window_max, units, test=True):
             BUY
             """
             buy(window_min, window_max, units, latest_row, client)
+            last_notified_state = LastNotifiedState.un_notified
 
         elif (suggested_position == Side.sell) & (current_position == PositionType.bought):
             """
             SELL
             """
             sell(window_min, window_max, units, latest_row, client)
+            last_notified_state = LastNotifiedState.un_notified
 
         elif (suggested_position == Side.buy) & (current_position == PositionType.bought):
             """
@@ -70,7 +74,10 @@ def notify_ma_crossover(window_min, window_max, units, test=True):
             """
             symbol_qty = client.get_account_balance_position_type()
             message = f"Buy signal not executed. Symbol quantity is greater than 0 ({symbol_qty})"
-            notify_current_transaction(message, latest_row, units, window_max, window_min)
+            print(message)
+            if last_notified_state != LastNotifiedState.avoid_repeat_buy:
+                notify_current_transaction(message, latest_row, units, window_max, window_min)
+                last_notified_state = LastNotifiedState.avoid_repeat_buy
 
         elif (suggested_position == Side.sell) & (current_position == PositionType.sold):
             """
@@ -78,7 +85,10 @@ def notify_ma_crossover(window_min, window_max, units, test=True):
             """
             symbol_qty = client.get_account_balance_position_type()
             message = f"Sell signal not executed. Symbol quantity already 0 ({symbol_qty})"
-            notify_current_transaction(message, latest_row, units, window_max, window_min)
+            print(message)
+            if last_notified_state != LastNotifiedState.avoid_repeat_sell:
+                notify_current_transaction(message, latest_row, units, window_max, window_min)
+                last_notified_state = LastNotifiedState.avoid_repeat_sell
 
         else:
             print(add_spacing('Suggested position is to hold. Doing nothing.'))
