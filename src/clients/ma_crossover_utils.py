@@ -41,11 +41,11 @@ def sell(window_min, window_max, units, latest_row, client):
     notify_current_transaction(message, latest_row, units, window_max, window_min)
 
     try:
-        # 1. Sell all
+        # 1. Remove all stops  # TODO temporary until cancelAndReplace implemented
+        client.cancel_all_open_orders_for_type(OrderType.stop_loss_limit)
+        # 2. Sell all  # TODO temporary until cancelAndReplace implemented
         full_quantity_crypto = client.account_balance_by_symbol("ETH")
         client.market_order(Side.sell, full_quantity_crypto)
-        # 2. Remove all stops
-        client.cancel_all_open_orders_for_type(OrderType.stop_loss_limit)
     except Exception as e:
         print(f"Exception: {e}")
         notifier.slack_notify("Sell order just failed - please investigate!!", "prod-trades")
