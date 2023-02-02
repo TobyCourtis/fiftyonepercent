@@ -57,11 +57,11 @@ notifier.slack_notify = MagicMock(return_value="nothing!")
 
 
 def mock_market_position_holding(cls):
-    return 100
+    return 0.00076
 
 
 def mock_market_position_sold(cls):
-    return 0
+    return 0.00075
 
 
 class TestBinanceClient(unittest.TestCase):
@@ -94,3 +94,21 @@ class TestBinanceClient(unittest.TestCase):
             expected_position_type = PositionType.sold
 
             self.assertEqual(actual_position_type, expected_position_type)
+
+    def test_get_account_balance_position_type_bought(self):
+        tested_binance_client = BinanceClient(test=True)
+
+        with patch.object(tested_binance_client, 'account_balance_by_symbol', new=mock_market_position_holding):
+            actual_balance_position_type = tested_binance_client.get_account_balance_position_type()
+            expected_balance_position_type = PositionType.bought
+
+            self.assertEqual(actual_balance_position_type, expected_balance_position_type)
+
+    def test_get_account_balance_position_type_sold(self):
+        tested_binance_client = BinanceClient(test=True)
+
+        with patch.object(tested_binance_client, 'account_balance_by_symbol', new=mock_market_position_sold):
+            actual_balance_position_type = tested_binance_client.get_account_balance_position_type()
+            expected_balance_position_type = PositionType.sold
+
+            self.assertEqual(actual_balance_position_type, expected_balance_position_type)
