@@ -27,7 +27,7 @@ market_order_return_value = {
     "selfTradePreventionMode": "NONE",
     "fills": [
         {
-            "price": "5",
+            "price": "6",
             "qty": "1.00000000",
             "commission": "4.00000000",
             "commissionAsset": "USDT",
@@ -55,13 +55,24 @@ mocked_spot_class.new_order = MagicMock(return_value=market_order_return_value)
 
 notifier.slack_notify = MagicMock(return_value="nothing!")
 
+BELOW_THRESHOLD = 0.00075
+ABOVE_THRESHOLD = 0.00076
 
-def mock_market_position_holding(cls):
-    return 0.00076
+
+def mock_market_position_holding(first):
+    return ABOVE_THRESHOLD
 
 
-def mock_market_position_sold(cls):
-    return 0.00075
+def mock_market_position_sold(first):
+    return BELOW_THRESHOLD
+
+
+def account_balance_by_symbol_bought(one, two):
+    return ABOVE_THRESHOLD
+
+
+def account_balance_by_symbol_sold(one, two):
+    return BELOW_THRESHOLD
 
 
 class TestBinanceClient(unittest.TestCase):
@@ -73,7 +84,7 @@ class TestBinanceClient(unittest.TestCase):
             self.assertEqual(tested_binance_client.client, mocked_spot_class)
 
             actual_order_message = tested_binance_client.market_order(Side.sell, 1, "ETHUSDT")
-            expected_order_message = "Order filled - qty: 6.0 price: 54.17"
+            expected_order_message = "SELL order filled. Qty: 6.0 price: 54.33333333"
 
             self.assertEqual(actual_order_message, expected_order_message)
 
@@ -98,7 +109,7 @@ class TestBinanceClient(unittest.TestCase):
     def test_get_account_balance_position_type_bought(self):
         tested_binance_client = BinanceClient(test=True)
 
-        with patch.object(tested_binance_client, 'account_balance_by_symbol', new=mock_market_position_holding):
+        with patch.object(tested_binance_client, 'account_balance_by_symbol', new=account_balance_by_symbol_bought):
             actual_balance_position_type = tested_binance_client.get_account_balance_position_type()
             expected_balance_position_type = PositionType.bought
 
@@ -107,7 +118,7 @@ class TestBinanceClient(unittest.TestCase):
     def test_get_account_balance_position_type_sold(self):
         tested_binance_client = BinanceClient(test=True)
 
-        with patch.object(tested_binance_client, 'account_balance_by_symbol', new=mock_market_position_sold):
+        with patch.object(tested_binance_client, 'account_balance_by_symbol', new=account_balance_by_symbol_sold):
             actual_balance_position_type = tested_binance_client.get_account_balance_position_type()
             expected_balance_position_type = PositionType.sold
 
