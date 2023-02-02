@@ -128,9 +128,6 @@ class BinanceClient:
         try:
             response = self.client.get_open_orders(symbol, recvWindow=60000)
             if len(response) == 0:
-                if not self.test:
-                    notifier.slack_notify("No live orders",
-                                          "prod-trades")
                 print(f"No live orders were found. Environment Test={self.test}, OrderTypeFilter={order_type_filter}")
                 return pd.DataFrame([])
             open_orders = []
@@ -284,7 +281,9 @@ class BinanceClient:
             print(pnl_df)
             if not self.test:
                 slack_image_upload.upload_image(pnl_snapshot_path, "PnL",
-                                                f"PnL Tables - PnL: {round(total_df.loc[0, 'PnL'], 2)} Qty: {round(total_df.loc[0, 'QTY'], 2)}")
+                                                f"PnL Tables - PnL: {round(total_df.loc[0, 'PnL'], 2)} "
+                                                f"Qty: {round(total_df.loc[0, 'QTY'], 2)}",
+                                                "prod-data")
             return pnl_df
 
 
