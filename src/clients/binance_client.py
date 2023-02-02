@@ -366,15 +366,25 @@ class BinanceClient:
         if not isinstance(side, Side):
             raise TypeError('Side must be Equal to BUY or SELL')
 
+        qty = round_down_to_decimal_place(qty, 4)  # adhere to LOT_SIZE
+
+        if side == side.buy:
+            # allows you to BUY as many ETH as 'qty' of GBP will allow
+            additional_param = {"quoteOrderQty": str(qty)}
+        else:
+            # specify the quantity of ETH you want to SELL
+            additional_param = {"quantity": str(qty)}
+
         params = {
             "symbol": symbol,
             "side": side.value,
             "type": OrderType.market.value,
-            "quantity": str(qty),
             "timestamp": int(round(dt.datetime.now().timestamp()))
         }
 
-        print(f"Order to {side.value} {symbol}:")
+        params = {**params, **additional_param}
+
+        print(f"Order to {side.value}  ({str(qty)} {symbol}):")
 
         try:
             response = self.client.new_order(**params)
@@ -388,6 +398,7 @@ class BinanceClient:
             order_message = "Order filled - qty: %s price: %s" % (round(qty, 2), round(wap, 2))
             if not self.test:
                 notifier.slack_notify(order_message, "prod-trades")
+            print(order_message)
             return order_message
         except ClientError as error:
             print(
