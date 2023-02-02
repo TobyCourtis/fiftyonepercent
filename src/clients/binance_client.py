@@ -418,13 +418,9 @@ class BinanceClient:
         try:
             response = self.client.new_order(**params)
             fills = response['fills']
-            qty = 0
-            wap = 0
-            for fill in fills:
-                wap += float(fill['qty']) * float(fill['price'])
-                qty += float(fill['qty'])
-            wap = wap / qty
-            order_message = f"Order filled - qty: {round(qty, self.PRECISION)} price: {round(wap, self.PRECISION)}"
+            qty, wap = self.get_qty_and_wap_from_fills(fills)
+            order_message = f"{Side.value} order filled. " \
+                            f"Qty: {round(qty, self.PRECISION)} price: {round(wap, self.PRECISION)}"
             if not self.test:
                 notifier.slack_notify(order_message, "prod-trades")
             print(order_message)
@@ -435,6 +431,15 @@ class BinanceClient:
                     error.status_code, error.error_code, error.error_message
                 )
             )
+
+    def get_qty_and_wap_from_fills(self, fills):
+        qty = 0
+        wap = 0
+        for fill in fills:
+            wap += float(fill['qty']) * float(fill['price'])
+            qty += float(fill['qty'])
+        wap = wap / qty
+        return qty, wap
 
     def place_limit_order(self, side, price):
         """
@@ -567,6 +572,47 @@ class BinanceClient:
         print(add_spacing("Response:"))
         print(response)
         return response
+
+    def cancel_and_replace_with_sell(self, order_id_to_cancel, qty_to_sell):
+        if order_id_to_cancel is None:
+            raise Exception('Cannot cancel empty order ID')
+        if qty_to_sell <= 0.0:
+            raise Exception(f'Cannot sell negative or 0 crypto ({qty_to_sell})')
+
+        symbol = "ETHUSDT" if self.test else "ETHGBP"  # only ETH supported for now
+
+        qty_to_sell = round_down_to_decimal_place(qty_to_sell, 4)  # adhere to LOT_SIZE
+
+        params = {
+            "cancelOrderId": str(order_id_to_cancel),
+            "symbol": symbol,
+            "side": Side.sell.value,
+            "type": OrderType.market.value,
+            "cancelReplaceMode": "STOP_ON_FAILURE",  # do not place sell if stop removal fails (Crypto is locked anyhow)
+            "timestamp": int(round(dt.datetime.now().timestamp())),
+            "quantity": qty_to_sell
+        }
+
+        try:
+            response = self.client.cancel_and_replace(**params)
+            fills = response['newOrderResponse']['fills']
+            qty, wap = self.get_qty_and_wap_from_fills(fills)
+
+            order_message = f"Cancel and replace with sell order filled - qty:" \
+                            f" {round(qty, self.PRECISION)} price: {round(wap, self.PRECISION)}." \
+                            f" Cancelled stop order ID: {order_id_to_cancel}"
+            if not self.test:
+                notifier.slack_notify(order_message, "prod-trades")
+            print(add_spacing(order_message))
+            return order_message
+        except ClientError as error:
+            print(
+                "Found error. status: {}, error code: {}, error message: {}".format(
+                    error.status_code, error.error_code, error.error_message
+                )
+            )
+        except Exception as e:
+            print(f"The following error occurred cancelling and replacing: {e}")
 
 
 if __name__ == "__main__":
