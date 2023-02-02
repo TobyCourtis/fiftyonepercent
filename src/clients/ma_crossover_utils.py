@@ -18,7 +18,7 @@ def notify_current_transaction(message, latest_row, units, window_max, window_mi
 
 
 def buy(window_min, window_max, units, latest_row, client):
-    message = "Buy Signal - Order Executed."
+    message = "MA Crossover buy process executed: "
     notify_current_transaction(message, latest_row, units, window_max, window_min)
 
     try:
@@ -33,22 +33,37 @@ def buy(window_min, window_max, units, latest_row, client):
         client.place_stop_order(stop_price)
     except Exception as e:
         print(f"Exception: {e}")
-        notifier.slack_notify("Buy order just failed - please investigate!!", "prod-trades")
+        notifier.slack_notify("MA Crossover buy process failed - please investigate!!", "prod-trades")
 
 
 def sell(window_min, window_max, units, latest_row, client):
-    message = "Sell Signal - Order Executed."
+    message = "MA Crossover sell process executed: "
     notify_current_transaction(message, latest_row, units, window_max, window_min)
 
     try:
-        # 1. Remove all stops  # TODO temporary until cancelAndReplace implemented
-        client.cancel_all_open_orders_for_type(OrderType.stop_loss_limit)
-        # 2. Sell all  # TODO temporary until cancelAndReplace implemented
-        full_quantity_crypto = client.account_balance_by_symbol("ETH")
-        client.market_order(Side.sell, full_quantity_crypto)
+        # 1. Get STOP order IDs
+        open_stop_order_ids = client.get_open_order_ids(order_type_filter=OrderType.stop_loss_limit)
+
+        # Case 1 stop found
+        if len(open_stop_order_ids) == 1:
+            # 1. Get full crypto balance locked and free
+            full_quantity_crypto = client.account_balance_by_symbol("ETH", include_locked=True)
+            # 2. Cancel stop and replace with sell market order
+            client.cancel_and_replace_with_sell(order_id_to_cancel=open_stop_order_ids[0],
+                                                qty_to_sell=full_quantity_crypto)
+
+        # Case many or no stops
+        else:
+            print("Cancelling stops then selling full balance")
+            # 1. Remove all stops (many or none)
+            client.cancel_all_open_orders_for_type(OrderType.stop_loss_limit)
+            # 2. Sell all
+            full_quantity_crypto = client.account_balance_by_symbol("ETH")
+            client.market_order(Side.sell, full_quantity_crypto)
+
     except Exception as e:
         print(f"Exception: {e}")
-        notifier.slack_notify("Sell order just failed - please investigate!!", "prod-trades")
+        notifier.slack_notify("MA Crossover sell process failed - please investigate!!", "prod-trades")
 
 
 def send_update_snapshot(all_candles, client, window_min, window_max, units):
