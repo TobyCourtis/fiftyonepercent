@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from src.clients.helpers import epoch_to_date, convert_to_hours
+from src.clients.helpers import epoch_to_date, convert_to_hours, Side
 
 
 class Candlesticks:
@@ -124,7 +124,7 @@ class Candlesticks:
         main_df = main_df.astype(float)
         return main_df
 
-    def get_current_position(self, dataframe):
+    def get_suggested_position(self, dataframe):
         # return the latest non 0 within values within a time frame
         match self.candleTimeframe:
             case "1m":
@@ -143,6 +143,18 @@ class Candlesticks:
         else:
             position = dataframe.iloc[-1, -1]
         return position
+
+    def suggested_position_type(self, dataframe) -> Side | None:
+        match self.get_suggested_position(dataframe):
+            case 1:
+                return Side.buy
+            case -1:
+                return Side.sell
+            case 0:
+                return None
+
+            case _:
+                raise Exception(f"Invalid suggested position was returned, expected buy/sell/hold.")
 
     def add(self, candles: Candlesticks):
         if self.closeTime[-1] > candles.openTime[0]:

@@ -11,11 +11,16 @@ from binance.spot import Spot
 from pandas import DataFrame
 
 from src.clients.candlesticks import Candlesticks
-from src.clients.helpers import Side, epoch_to_date, create_image_from_dataframe, OrderType, add_spacing
+from src.clients.helpers import Side, epoch_to_date, create_image_from_dataframe, OrderType, add_spacing, PositionType, \
+    round_down_to_decimal_place
 from src.notify import notifier, slack_image_upload
 
 
 class BinanceClient:
+    PRECISION = 8  # from exchange_info ETH PRECISION is 8 for test and prod
+    TICK_SIZE = 0.01  # from exchange_info symbol filterType PRICE_FILTER
+    MIN_PRICE = 0.01
+
     def __init__(self, **kwargs):
         if "test" in kwargs:
             test = kwargs["test"]
@@ -55,7 +60,7 @@ class BinanceClient:
     ACCOUNT INFORMATION
     """
 
-    def account_info(self):
+    def all_account_info(self):
         print("Account Info")
         acc_info = self.client.account(recvWindow=60000)  # TODO time sync and lower recvWindow
         for i in acc_info:
@@ -65,6 +70,23 @@ class BinanceClient:
                     pprint(currency)
             else:
                 print(f"{i}: {acc_info[i]}")
+
+    def account_balance_by_symbol(self, symbol="ETH") -> float:
+        """
+
+        :param symbol: Symbol (Note in account balance, the raw crypto symbol is used e.g. ETH not ETHGBP)
+        :return: float for account balance of input symbol
+        """
+        account_info = self.client.account(recvWindow=60000)
+        for key, value in account_info.items():
+            if key == 'balances':
+                for balance in value:
+                    if balance['asset'] == symbol:
+                        available_balance = float(balance['free'])
+                        print(f"Balance ({symbol}): {available_balance}")
+                        return available_balance
+        print(f"No balance found for {symbol}")
+        return 0.0
 
     """
     POSITION/PNL INFORMATION
@@ -79,7 +101,7 @@ class BinanceClient:
             if len(response) == 0:
                 if not self.test:
                     notifier.slack_notify("No live orders",
-                                          "muted-dump")
+                                          "prod-trades")
                 print(f"No live orders were found. Environment Test={self.test}, OrderTypeFilter={order_type_filter}")
                 return pd.DataFrame([])
             open_orders = []
@@ -110,7 +132,7 @@ class BinanceClient:
                     if len(open_orders) == 0:
                         if not self.test:
                             notifier.slack_notify("No live orders",
-                                                  "muted-dump")
+                                                  "prod-trades")
                         print(f"No live orders were found for order type {order_type_filter.value} "
                               f"Environment Test={self.test}")
                         return open_orders
@@ -145,17 +167,20 @@ class BinanceClient:
         """
         if symbol is None:
             symbol = "ETHUSDT" if self.test else "ETHGBP"  # only ETH supported for now
-        precision = 8  # from exchange_info ETH precision is 8 for test and prod
 
+        qty = 0
         try:
             trade_history = self.client.my_trades(symbol=symbol, recvWindow=60000)
             if len(trade_history) == 0:
+                print(add_spacing(f"Current qty: {0}"))
                 return 0
-            qty = 0
+
             for trade_info in trade_history:
                 trade_qty = float(trade_info['qty']) if trade_info['isBuyer'] == True else float(trade_info['qty']) * -1
-                qty += round(trade_qty, precision)
-            return round(qty, precision)
+                qty += round(trade_qty, self.PRECISION)
+            rounded_qty = round(qty, self.PRECISION)
+            print(add_spacing(f"Current qty: {rounded_qty}"))
+            return rounded_qty
 
         except ClientError as error:
             print(
@@ -163,6 +188,16 @@ class BinanceClient:
                     error.status_code, error.error_code, error.error_message
                 )
             )
+
+    def get_market_position_type(self, symbol=None) -> PositionType:
+        """
+        Return PositionType meaning are we currently in a state of BOUGHT or SOLD our holdings
+
+        :param symbol: Symbol
+        :return: PositionType (bought OR sold)
+        """
+        threshold = 0.00076  # £1 buys this much ETH
+        return PositionType.sold if self.get_market_position(symbol) < threshold else PositionType.bought
 
     def position_summary(self, symbol_list=None) -> pd.DataFrame:
         """
@@ -235,17 +270,27 @@ class BinanceClient:
     MARKET INFORMATION
     """
 
-    def coin_info(self, symbol):
+    def coin_info(self, symbol=None) -> float:
+        if self.test:
+            raise Exception("This function is not supported in test environment")
+
+        if symbol is None:
+            symbol = "ETHGBP"  # only ETH supported for now
+
         coin_info = self.client.coin_info()
         for coin in coin_info:
             if coin["coin"] == symbol:
-                print(f"\nETH balance: {coin['free']}")
+                print(add_spacing(f"{symbol} balance: {coin['free']}"))
+                return float(coin['free'])
+        return 0.0
 
-    def avg_price(self):
-        symbol = "ETHUSDT" if self.test else "ETHGBP"  # only ETH supported for now
-        avg_price = self.client.avg_price(symbol)
-        pprint(avg_price)
-        return avg_price["price"]
+    def avg_price(self, symbol=None) -> float:
+        if symbol is None:
+            symbol = "ETHUSDT" if self.test else "ETHGBP"  # only ETH supported for now
+        avg_price_response = self.client.avg_price(symbol)
+        avg_price = float(avg_price_response["price"])
+        print(f"Average price now: {avg_price}")
+        return avg_price  # does not need rounding as it's straight from Binance
 
     def ticker_price(self, symbol="ETHUSDT"):
         print(self.client.ticker_price(symbol=symbol))
@@ -314,24 +359,32 @@ class BinanceClient:
     TRADE FUNCTIONS
     """
 
-    def market_order(self, symbol, side: Side, qty: float):
-
-        if not self.test:
-            print("Buying is disabled outside of test mode")
-            exit()
+    def market_order(self, side: Side, qty: float, symbol=None):
+        if symbol is None:
+            symbol = "ETHUSDT" if self.test else "ETHGBP"  # only ETH supported for now
 
         if not isinstance(side, Side):
             raise TypeError('Side must be Equal to BUY or SELL')
 
+        qty = round_down_to_decimal_place(qty, 4)  # adhere to LOT_SIZE
+
+        if side == side.buy:
+            # allows you to BUY as many ETH as 'qty' of GBP will allow
+            additional_param = {"quoteOrderQty": str(qty)}
+        else:
+            # specify the quantity of ETH you want to SELL
+            additional_param = {"quantity": str(qty)}
+
         params = {
             "symbol": symbol,
             "side": side.value,
-            "type": "MARKET",
-            "quantity": str(qty),
+            "type": OrderType.market.value,
             "timestamp": int(round(dt.datetime.now().timestamp()))
         }
 
-        print(f"Order to {side.value} {symbol}:")
+        params = {**params, **additional_param}
+
+        print(f"Order to {side.value}  ({str(qty)} {symbol}):")
 
         try:
             response = self.client.new_order(**params)
@@ -343,7 +396,9 @@ class BinanceClient:
                 qty += float(fill['qty'])
             wap = wap / qty
             order_message = "Order filled - qty: %s price: %s" % (round(qty, 2), round(wap, 2))
-            notifier.slack_notify(order_message, "crypto-trading")
+            if not self.test:
+                notifier.slack_notify(order_message, "prod-trades")
+            print(order_message)
             return order_message
         except ClientError as error:
             print(
@@ -367,7 +422,7 @@ class BinanceClient:
         params = {
             "symbol": symbol,
             "side": side.value,
-            "type": "LIMIT",
+            "type": OrderType.limit.value,
             "quantity": quantity,  # we will have to dynamically buy quantity based on price we have. Rounding important
             "timestamp": int(round(dt.datetime.now().timestamp())),
             "price": price,
@@ -389,13 +444,26 @@ class BinanceClient:
 
         symbol = "ETHUSDT" if self.test else "ETHGBP"  # only ETH supported for now
 
-        quantity = str(self.get_market_position())  # get quantity of ALL of our current holdings
-        price = stop_price * 0.90
+        current_symbol_balance = self.account_balance_by_symbol("ETH")
+        if current_symbol_balance == 0:
+            msg = f"Symbol {symbol} holdings are 0. Stop order failed to place."
+            print(msg)
+            return msg
+        current_symbol_balance = round_down_to_decimal_place(current_symbol_balance, 4)  # adhere to LOT_SIZE = 0.0001
+        quantity = str(current_symbol_balance)
+
+        price = stop_price * 0.95
+        price = round(price, 2)  # adhere to TICK_SIZE = 0.01
+
+        if price < self.MIN_PRICE:
+            raise Exception("Cannot place a stop with price less than filter 'PRICE_FILTER' minPrice field")
+
+        stop_price = round(stop_price, 2)  # adhere to TICK_SIZE = 0.01
         params = {
             "symbol": symbol,
             "side": Side.sell.value,  # for now always a sell order
-            "type": "STOP_LOSS_LIMIT",
-            "quantity": quantity,
+            "type": OrderType.stop_loss_limit.value,
+            "quantity": str(quantity),
             "timestamp": int(round(dt.datetime.now().timestamp())),
             "timeInForce": "GTC",  # place stop until we remove
             "stopPrice": stop_price,
@@ -423,7 +491,7 @@ class BinanceClient:
         :return: Message
         """
         if order_type is None:
-            self.cancel_all_open_orders()
+            return self.cancel_all_open_orders()
 
         symbol = "ETHUSDT" if self.test else "ETHGBP"  # only ETH supported for now
 
@@ -445,7 +513,7 @@ class BinanceClient:
                   f"type={res['type']} " \
                   f"side={res['side']}"
             if not self.test:
-                notifier.slack_notify(msg)
+                notifier.slack_notify(msg, "prod-trades")
             print(msg)
 
         return f"Cancelled all orders of type {order_type}"
@@ -474,7 +542,7 @@ class BinanceClient:
 
 if __name__ == "__main__":
     client = BinanceClient(test=True)
-    client.market_order("ETHUSDT", Side.sell, 1)
+    client.market_order(Side.sell, 1)
     print(client.position_summary())
 
     print("Finished and exited")

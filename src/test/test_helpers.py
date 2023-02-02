@@ -1,6 +1,6 @@
 import unittest
 
-from . import epoch_to_date, convert_to_hours, epoch_to_minutes
+from src.clients.helpers import epoch_to_date, convert_to_hours, epoch_to_minutes
 
 
 class TestHelpers(unittest.TestCase):

@@ -1,5 +1,6 @@
-from notify import notifier
 import sys
+
+from notify import notifier
 from src.clients.binance_client import BinanceClient
 from src.clients.helpers import moving_average
 
@@ -25,7 +26,7 @@ if __name__ == "__main__":
     if sys.argv[1] == "daily":
         MA = moving_average(binance_client.get_klines("15m", days=1),
                             limit=8)  # look at 2-hour period 1 day ago
-        average_price = float(binance_client.avg_price())
+        average_price = binance_client.avg_price()
         perc_change = (average_price / MA * 100) - 100
         if perc_change > 0:
             notify_up("Daily", perc_change, average_price)
@@ -35,7 +36,7 @@ if __name__ == "__main__":
     elif sys.argv[1] == "hourly":
         MA = moving_average(binance_client.get_klines("1m", minutes=70),
                             limit=20)  # look at 20-minute period 1h10m ago
-        average_price = float(binance_client.avg_price())
+        average_price = binance_client.avg_price()
         perc_change = (average_price / MA * 100) - 100
 
         if perc_change > 0:

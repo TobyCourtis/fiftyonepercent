@@ -55,9 +55,18 @@ format_markdown = lambda markdown_table: "```\n" + markdown_table.to_markdown() 
 add_spacing = lambda text: f"\n{text}\n"
 
 
+def enum_equality_check(original, other):
+    if other is None:
+        return False
+    return other.value == original.value
+
+
 class Side(Enum):
     buy = 'BUY'
     sell = 'SELL'
+
+    def __eq__(self, other):
+        return enum_equality_check(self, other)
 
 
 class OrderType(Enum):
@@ -66,6 +75,22 @@ class OrderType(Enum):
     market = "MARKET"
     stop_loss_limit = "STOP_LOSS_LIMIT"
     take_profit_limit = "TAKE_PROFIT_LIMIT"
+
+    def __eq__(self, other):
+        return enum_equality_check(self, other)
+
+
+class PositionType(Enum):
+    bought = "bought"
+    sold = "sold"
+
+    def __eq__(self, other):
+        return enum_equality_check(self, other)
+
+
+def round_down_to_decimal_place(input_float, decimal_points):
+    decimal_to_int_factor = (10 ** decimal_points)
+    return ((input_float * 10 ** decimal_points) // 1) / decimal_to_int_factor
 
 
 def create_image_from_dataframe(df, file_path, name):

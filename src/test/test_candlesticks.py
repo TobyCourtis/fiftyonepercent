@@ -2,7 +2,8 @@ import unittest
 
 import pandas as pd
 
-from . import Candlesticks
+from src.clients.candlesticks import Candlesticks
+from src.clients.helpers import Side
 
 
 def variable_length_candlesticks(length):
@@ -72,7 +73,7 @@ class TestCandlesticks(unittest.TestCase):
         candles = Candlesticks()
         candles.candleTimeframe = '1m'
 
-        actual = candles.get_current_position(df)
+        actual = candles.get_suggested_position(df)
         self.assertEqual(actual, 1)
 
     def test_position_1m_trailing_buy(self):
@@ -81,7 +82,7 @@ class TestCandlesticks(unittest.TestCase):
         candles = Candlesticks()
         candles.candleTimeframe = '1m'
 
-        actual = candles.get_current_position(df)
+        actual = candles.get_suggested_position(df)
         self.assertEqual(actual, 1)
 
     def test_position_1m_trailing_sell(self):
@@ -90,7 +91,7 @@ class TestCandlesticks(unittest.TestCase):
         candles = Candlesticks()
         candles.candleTimeframe = '1m'
 
-        actual = candles.get_current_position(df)
+        actual = candles.get_suggested_position(df)
         self.assertEqual(actual, -1)
 
     def test_position_15m_trailing_buy(self):
@@ -99,7 +100,7 @@ class TestCandlesticks(unittest.TestCase):
         candles = Candlesticks()
         candles.candleTimeframe = '15m'
 
-        actual = candles.get_current_position(df)
+        actual = candles.get_suggested_position(df)
         self.assertEqual(actual, 0)
 
     def test_position_15m_trailing_sell(self):
@@ -108,7 +109,7 @@ class TestCandlesticks(unittest.TestCase):
         candles = Candlesticks()
         candles.candleTimeframe = '15m'
 
-        actual = candles.get_current_position(df)
+        actual = candles.get_suggested_position(df)
         self.assertEqual(actual, 0)
 
     def test_position_15m_buy(self):
@@ -117,7 +118,7 @@ class TestCandlesticks(unittest.TestCase):
         candles = Candlesticks()
         candles.candleTimeframe = '15m'
 
-        actual = candles.get_current_position(df)
+        actual = candles.get_suggested_position(df)
         self.assertEqual(actual, 1)
 
     def test_position_15m_sell(self):
@@ -126,7 +127,7 @@ class TestCandlesticks(unittest.TestCase):
         candles = Candlesticks()
         candles.candleTimeframe = '15m'
 
-        actual = candles.get_current_position(df)
+        actual = candles.get_suggested_position(df)
         self.assertEqual(actual, -1)
 
     def test_position_15m_unchanged(self):
@@ -135,7 +136,7 @@ class TestCandlesticks(unittest.TestCase):
         candles = Candlesticks()
         candles.candleTimeframe = '1m'
 
-        actual = candles.get_current_position(df)
+        actual = candles.get_suggested_position(df)
         self.assertEqual(actual, 0)
 
     def test_position_buy_sell_quick(self):
@@ -144,23 +145,26 @@ class TestCandlesticks(unittest.TestCase):
         candles = Candlesticks()
         candles.candleTimeframe = '1m'
 
-        actual = candles.get_current_position(df)
+        actual = candles.get_suggested_position(df)
         self.assertEqual(actual, -1)
 
     def test_position_1m_outrange(self):
-        df = pd.DataFrame([[0], [1], [0], [0], [0], [0], [0], [0]], columns=['Position'])
+        position_rows = [[0], [1], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0]]
+        df = pd.DataFrame(position_rows, columns=['Position'])
 
         candles = Candlesticks()
         candles.candleTimeframe = '1m'
 
-        actual = candles.get_current_position(df)
+        actual = candles.get_suggested_position(df)
         self.assertEqual(actual, 0)
 
     def test_get_position(self):
-        df = pd.DataFrame([[123]], columns=['Position'])
+        df = pd.DataFrame([[1]], columns=['Position'])
 
-        actual = Candlesticks.get_current_position(None, df)
-        self.assertEqual(actual, 123)
+        candles = Candlesticks()
+        candles.candleTimeframe = '1m'
+        actual = candles.get_suggested_position(df)
+        self.assertEqual(actual, 1)
 
     def test_add_candles(self):
         candles1 = Candlesticks()
@@ -188,3 +192,19 @@ class TestCandlesticks(unittest.TestCase):
         candles2.candleTimeframe = "BAR"
 
         self.assertRaises(Exception, candles1.add, candles2)
+
+    def test_suggested_position_type_buy(self):
+        df = pd.DataFrame([[1]], columns=['Position'])
+
+        candles = Candlesticks()
+        candles.candleTimeframe = '1m'
+        actual = candles.suggested_position_type(df)
+        self.assertEqual(actual, Side.buy)
+
+    def test_suggested_position_type_sell(self):
+        df = pd.DataFrame([[-1]], columns=['Position'])
+
+        candles = Candlesticks()
+        candles.candleTimeframe = '1m'
+        actual = candles.suggested_position_type(df)
+        self.assertEqual(actual, Side.sell)
