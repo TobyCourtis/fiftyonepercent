@@ -113,6 +113,14 @@ class BinanceClient:
     POSITION/PNL INFORMATION
     """
 
+    def get_open_order_ids(self, order_type_filter=None, save_image=True) -> DataFrame:
+        open_orders = self.show_open_orders(order_type_filter=order_type_filter, save_image=save_image)
+
+        open_order_ids = open_orders['OrderId'].tolist()
+        print("Open order IDs:")
+        print(open_order_ids)
+        return open_order_ids
+
     def show_open_orders(self, order_type_filter=None, save_image=True) -> DataFrame:
 
         symbol = "ETHUSDT" if self.test else "ETHGBP"  # only ETH supported for now
