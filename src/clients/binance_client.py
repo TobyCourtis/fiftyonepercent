@@ -88,6 +88,18 @@ class BinanceClient:
         print(f"No balance found for {symbol}")
         return 0.0
 
+    def get_account_balance_position_type(self, symbol=None) -> PositionType:
+        """
+        Return PositionType meaning are we currently in a state of BOUGHT or SOLD our holdings
+
+        :param symbol: Symbol
+        :return: PositionType (bought OR sold)
+        """
+        if symbol is None:
+            symbol = "ETH"
+        threshold = 0.00076  # £1 buys this much ETH
+        return PositionType.sold if self.account_balance_by_symbol(symbol) < threshold else PositionType.bought
+
     """
     POSITION/PNL INFORMATION
     """

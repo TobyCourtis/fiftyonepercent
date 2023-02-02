@@ -47,7 +47,7 @@ def notify_ma_crossover(window_min, window_max, units, test=True):
         print(ma_crossover_dataframe.tail())
 
         suggested_position = all_candles.suggested_position_type(ma_crossover_dataframe)
-        current_position = client.get_market_position_type()
+        current_position = client.get_account_balance_position_type()
 
         latest_row = ma_crossover_dataframe.iloc[-1]
 
@@ -68,16 +68,16 @@ def notify_ma_crossover(window_min, window_max, units, test=True):
             """
             AVOIDING REPEAT BUY
             """
-            current_qty = client.get_market_position()
-            message = f"Buy signal not executed. Symbol quantity is greater than 0 ({current_qty})"
+            symbol_qty = client.get_account_balance_position_type()
+            message = f"Buy signal not executed. Symbol quantity is greater than 0 ({symbol_qty})"
             notify_current_transaction(message, latest_row, units, window_max, window_min)
 
         elif (suggested_position == Side.sell) & (current_position == PositionType.sold):
             """
             AVOIDING REPEAT SELL
             """
-            current_qty = client.get_market_position()
-            message = f"Sell signal not executed. Symbol quantity already 0 ({current_qty})"
+            symbol_qty = client.get_account_balance_position_type()
+            message = f"Sell signal not executed. Symbol quantity already 0 ({symbol_qty})"
             notify_current_transaction(message, latest_row, units, window_max, window_min)
 
         else:

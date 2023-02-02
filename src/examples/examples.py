@@ -135,5 +135,10 @@ def _all_account_info(test):
     client.all_account_info()
 
 
+def _get_account_balance_position_type(test):
+    client = BinanceClient(test=test)
+    client.get_account_balance_position_type()
+
+
 if __name__ == "__main__":
-    get_account_balance(test=True, symbol="ETH")
+    _get_account_balance_position_type(False)
