@@ -6,8 +6,11 @@ Examples will include buying, selling, plotting and more.
 
 import json
 
+import pandas as pd
+
 from src.clients.binance_client import BinanceClient
 from src.clients.helpers import Side
+from src.clients.ma_crossover_utils import buy, sell
 
 
 def create_ma_crossover():
@@ -75,6 +78,11 @@ def _stop_order(stop_price):
     client.place_stop_order(stop_price)  # if price goes to 500 sell
 
 
+def _stop_order_prod(stop_price):
+    client = BinanceClient(test=False)
+    client.place_stop_order(stop_price)  # if price goes to 500 sell
+
+
 def _cancel_all_open_orders_for_type(order_type):
     client = BinanceClient(test=True)
     client.cancel_all_open_orders_for_type(order_type)
@@ -90,5 +98,42 @@ def _coin_info_ETH():
     print(client.coin_info())
 
 
+def dummy_dataframe():
+    data = {'Close': [1595.1, 1595.2, 1595.3, 1595.4, 1595.5],
+            'Short': [1593.1, 1593.2, 1593.3, 1593.4, 1593.5],
+            'Long': [1594.3, 1594.2, 1594.1, 1592.1, 1592.2],
+            'Signal': [0.0, 0.0, 0.0, 1.0, 1.0],
+            'Position': [0.0, 0.0, 0.0, 1.0, 0.0]
+            }
+
+    index = ['2023-01-31 19:55:00', '2023-01-31 19:56:00', '2023-01-31 19:57:00', '2023-01-31 19:58:00',
+             '2023-01-31 19:59:00']
+    return pd.DataFrame(data, index=index)
+
+
+def _ma_crossover_buy():
+    ma_crossover_dataframe = dummy_dataframe()
+    dummy_latest_row = ma_crossover_dataframe.iloc[-1]
+    client = BinanceClient(test=False)
+    buy(1, 2, "hours", dummy_latest_row, client)
+
+
+def _ma_crossover_sell():
+    ma_crossover_dataframe = dummy_dataframe()
+    dummy_latest_row = ma_crossover_dataframe.iloc[-1]
+    client = BinanceClient(test=False)
+    sell(1, 2, "hours", dummy_latest_row, client)
+
+
+def get_account_balance(test, symbol=None):
+    client = BinanceClient(test=test)
+    client.account_balance_by_symbol(symbol)
+
+
+def _all_account_info(test):
+    client = BinanceClient(test=test)
+    client.all_account_info()
+
+
 if __name__ == "__main__":
-    _coin_info_GBP()
+    get_account_balance(test=True, symbol="ETH")
