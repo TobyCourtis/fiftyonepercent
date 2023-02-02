@@ -1,8 +1,14 @@
+import sys
 import time
+from pathlib import Path
 
 from binance_client import BinanceClient
 from helpers import epoch_to_date, epoch_to_minutes, bruce_buffer, add_spacing, PositionType, Side, LastNotifiedState
 from ma_crossover_utils import notify_current_transaction, send_update_snapshot, buy, sell
+
+root_path = str(Path(__file__).parent.parent.parent)
+if root_path not in sys.path:
+    sys.path.append(root_path)
 
 
 def notify_ma_crossover(window_min, window_max, units, test=True):
