@@ -1,3 +1,5 @@
+import traceback
+
 from src.clients.helpers import Side, OrderType
 from src.notify import notifier, slack_image_upload
 
@@ -33,6 +35,7 @@ def buy(window_min, window_max, units, latest_row, client):
         client.place_stop_order(stop_price)
     except Exception as e:
         print(f"Exception: {e}")
+        traceback.print_exc()
         notifier.slack_notify("MA Crossover buy process failed - please investigate!!", "prod-trades")
 
 
@@ -63,6 +66,7 @@ def sell(window_min, window_max, units, latest_row, client):
 
     except Exception as e:
         print(f"Exception: {e}")
+        traceback.print_exc()
         notifier.slack_notify("MA Crossover sell process failed - please investigate!!", "prod-trades")
 
 
