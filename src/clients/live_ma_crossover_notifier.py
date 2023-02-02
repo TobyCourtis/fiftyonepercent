@@ -23,7 +23,7 @@ def notify_ma_crossover(window_min, window_max, units, test=True):
     client = BinanceClient(test=test)
 
     # initialise 30 days of candles
-    all_candles = client.get_klines(days=30)
+    all_candles = client.get_klines(days=1)
 
     while True:
         new_start_time = all_candles.closeTime[-1]  # start from last candle closing time
@@ -94,4 +94,4 @@ def notify_ma_crossover(window_min, window_max, units, test=True):
 
 
 if __name__ == "__main__":
-    notify_ma_crossover(1, 2, units="hours", test=True)
+    notify_ma_crossover(1, 2, units="hours", test=False)
