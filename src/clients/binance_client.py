@@ -444,13 +444,26 @@ class BinanceClient:
 
         symbol = "ETHUSDT" if self.test else "ETHGBP"  # only ETH supported for now
 
-        quantity = str(self.get_market_position())  # get quantity of ALL of our current holdings
+        current_symbol_balance = self.account_balance_by_symbol("ETH")
+        if current_symbol_balance == 0:
+            msg = f"Symbol {symbol} holdings are 0. Stop order failed to place."
+            print(msg)
+            return msg
+        current_symbol_balance = round_down_to_decimal_place(current_symbol_balance, 4)  # adhere to LOT_SIZE = 0.0001
+        quantity = str(current_symbol_balance)
+
         price = stop_price * 0.95
+        price = round(price, 2)  # adhere to TICK_SIZE = 0.01
+
+        if price < self.MIN_PRICE:
+            raise Exception("Cannot place a stop with price less than filter 'PRICE_FILTER' minPrice field")
+
+        stop_price = round(stop_price, 2)  # adhere to TICK_SIZE = 0.01
         params = {
             "symbol": symbol,
             "side": Side.sell.value,  # for now always a sell order
             "type": OrderType.stop_loss_limit.value,
-            "quantity": quantity,
+            "quantity": str(quantity),
             "timestamp": int(round(dt.datetime.now().timestamp())),
             "timeInForce": "GTC",  # place stop until we remove
             "stopPrice": stop_price,
