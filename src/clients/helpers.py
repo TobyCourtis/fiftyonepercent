@@ -88,6 +88,11 @@ class PositionType(Enum):
         return enum_equality_check(self, other)
 
 
+def round_down_to_decimal_place(input_float, decimal_points):
+    decimal_to_int_factor = (10 ** decimal_points)
+    return ((input_float * 10 ** decimal_points) // 1) / decimal_to_int_factor
+
+
 def create_image_from_dataframe(df, file_path, name):
     fig_background_color = 'lightgrey'
     fig_border = 'black'
