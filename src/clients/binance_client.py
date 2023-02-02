@@ -71,9 +71,10 @@ class BinanceClient:
             else:
                 print(f"{i}: {acc_info[i]}")
 
-    def account_balance_by_symbol(self, symbol="ETH") -> float:
+    def account_balance_by_symbol(self, symbol="ETH", include_locked=False) -> float:
         """
 
+        :param include_locked: Include 'locked' balance such as current STOP order values
         :param symbol: Symbol (Note in account balance, the raw crypto symbol is used e.g. ETH not ETHGBP)
         :return: float for account balance of input symbol
         """
@@ -82,23 +83,31 @@ class BinanceClient:
             if key == 'balances':
                 for balance in value:
                     if balance['asset'] == symbol:
+                        locked_balance = float(balance['locked'])
                         available_balance = float(balance['free'])
-                        print(f"Balance ({symbol}): {available_balance}")
+                        if include_locked:
+                            available_balance += locked_balance
+
+                        available_balance_string = "{:.10f}".format(available_balance).rstrip('0')
+                        print(add_spacing(
+                            f"Balance ({symbol}): {available_balance_string}. Locked included={include_locked}"))
                         return available_balance
-        print(f"No balance found for {symbol}")
+        print(add_spacing(f"No balance found for {symbol}"))
         return 0.0
 
-    def get_account_balance_position_type(self, symbol=None) -> PositionType:
+    def get_account_balance_position_type(self, symbol=None, include_locked=False) -> PositionType:
         """
         Return PositionType meaning are we currently in a state of BOUGHT or SOLD our holdings
 
+        :param include_locked: Include locked balance bool
         :param symbol: Symbol
         :return: PositionType (bought OR sold)
         """
         if symbol is None:
             symbol = "ETH"
         threshold = 0.00076  # £1 buys this much ETH
-        return PositionType.sold if self.account_balance_by_symbol(symbol) < threshold else PositionType.bought
+        return PositionType.sold if self.account_balance_by_symbol(symbol,
+                                                                   include_locked) < threshold else PositionType.bought
 
     """
     POSITION/PNL INFORMATION
