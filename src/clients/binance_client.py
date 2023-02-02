@@ -407,7 +407,7 @@ class BinanceClient:
                 wap += float(fill['qty']) * float(fill['price'])
                 qty += float(fill['qty'])
             wap = wap / qty
-            order_message = "Order filled - qty: %s price: %s" % (round(qty, 2), round(wap, 2))
+            order_message = f"Order filled - qty: {round(qty, self.PRECISION)} price: {round(wap, self.PRECISION)}"
             if not self.test:
                 notifier.slack_notify(order_message, "prod-trades")
             print(order_message)
