@@ -97,7 +97,6 @@ def notify_ma_crossover(window_min, window_max, units, test=True):
 
         else:
             print(add_spacing('Suggested position is to hold. Doing nothing.'))
-            pass
 
         current_minutes_value = epoch_to_minutes(new_start_time)
         if current_minutes_value % 10 == 0:  # every 10 minutes save current snapshot
