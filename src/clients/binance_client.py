@@ -177,7 +177,7 @@ class BinanceClient:
             if save_image:
                 create_image_from_dataframe(open_orders, open_orders_path, "Open Orders")
             if not self.test:
-                slack_image_upload.upload_image(open_orders_path, "PnL", f"Number of Open Orders - {len(response)}")
+                slack_image_upload.upload_image(open_orders_path, "PnL", f"Number of Open Orders: {len(response)}")
             return open_orders
 
         except ClientError as error:
