@@ -1,5 +1,4 @@
 import sys
-import time
 from pathlib import Path
 
 root_path = str(Path(__file__).parent.parent.parent)
@@ -7,8 +6,9 @@ if root_path not in sys.path:
     sys.path.append(root_path)
 
 from binance_client import BinanceClient
-from helpers import epoch_to_date, epoch_to_minutes, bruce_buffer, add_spacing, PositionType, Side, LastNotifiedState
-from ma_crossover_utils import notify_current_transaction, send_update_snapshot, buy, sell
+from helpers import epoch_to_date, epoch_to_minutes, add_spacing, PositionType, Side, LastNotifiedState
+from ma_crossover_utils import notify_current_transaction, send_update_snapshot, buy, sell, \
+    sleep_until_next_candle_released
 
 
 def notify_ma_crossover(window_min, window_max, units, test=True):
@@ -40,9 +40,8 @@ def notify_ma_crossover(window_min, window_max, units, test=True):
         client = BinanceClient(test=test)  # needed as a connection keeps being reset with same object instance
         new_candles = client.get_klines(startTime=new_start_time)
         if len(new_candles) == 0:
-            print(add_spacing("NO new candles found, waiting one minute ..."))
-            time.sleep(60)
-            bruce_buffer()
+            print(add_spacing("No new candles found. Sleeping."))
+            sleep_until_next_candle_released(new_start_time)
             continue
 
         all_candles.add(new_candles)
@@ -104,9 +103,7 @@ def notify_ma_crossover(window_min, window_max, units, test=True):
         if current_minutes_value % 10 == 0:  # every 10 minutes save current snapshot
             send_update_snapshot(all_candles, client, window_min, window_max, units)
 
-        print(add_spacing("Waiting 1 minute for new candles ..."))
-        time.sleep(60)
-        bruce_buffer()
+        sleep_until_next_candle_released(new_start_time)
 
 
 if __name__ == "__main__":

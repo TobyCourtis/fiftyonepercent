@@ -1,6 +1,8 @@
+import datetime
+import time
 import traceback
 
-from src.clients.helpers import Side, OrderType
+from src.clients.helpers import Side, OrderType, add_spacing, bruce_buffer
 from src.notify import notifier, slack_image_upload
 
 STOP_LOSS_MULTIPLIER = 0.9
@@ -77,3 +79,16 @@ def send_update_snapshot(all_candles, client, window_min, window_max, units):
     slack_image_upload.upload_current_plot(window_min, window_max, units)
     client.position_summary()
     client.show_open_orders()
+
+
+def sleep_until_next_candle_released(new_start_time):
+    new_start_datetime = datetime.datetime.fromtimestamp(int(new_start_time / 1000))
+    seconds_elapsed = (datetime.datetime.now() - new_start_datetime).total_seconds()
+    sleep_time = 60 - seconds_elapsed
+    print(sleep_time)
+    if sleep_time <= 0:
+        pass
+    else:
+        print(add_spacing(f"Waiting {sleep_time} seconds for new candles ..."))
+        time.sleep(sleep_time)
+    bruce_buffer()
