@@ -11,11 +11,16 @@ from binance.spot import Spot
 from pandas import DataFrame
 
 from src.clients.candlesticks import Candlesticks
-from src.clients.helpers import Side, epoch_to_date, create_image_from_dataframe, OrderType, add_spacing, PositionType
+from src.clients.helpers import Side, epoch_to_date, create_image_from_dataframe, OrderType, add_spacing, PositionType, \
+    round_down_to_decimal_place
 from src.notify import notifier, slack_image_upload
 
 
 class BinanceClient:
+    PRECISION = 8  # from exchange_info ETH PRECISION is 8 for test and prod
+    TICK_SIZE = 0.01  # from exchange_info symbol filterType PRICE_FILTER
+    MIN_PRICE = 0.01
+
     def __init__(self, **kwargs):
         if "test" in kwargs:
             test = kwargs["test"]
@@ -162,7 +167,6 @@ class BinanceClient:
         """
         if symbol is None:
             symbol = "ETHUSDT" if self.test else "ETHGBP"  # only ETH supported for now
-        precision = 8  # from exchange_info ETH precision is 8 for test and prod
 
         qty = 0
         try:
@@ -173,8 +177,8 @@ class BinanceClient:
 
             for trade_info in trade_history:
                 trade_qty = float(trade_info['qty']) if trade_info['isBuyer'] == True else float(trade_info['qty']) * -1
-                qty += round(trade_qty, precision)
-            rounded_qty = round(qty, precision)
+                qty += round(trade_qty, self.PRECISION)
+            rounded_qty = round(qty, self.PRECISION)
             print(add_spacing(f"Current qty: {rounded_qty}"))
             return rounded_qty
 

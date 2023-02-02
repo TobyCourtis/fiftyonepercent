@@ -23,7 +23,8 @@ def buy(window_min, window_max, units, latest_row, client):
 
     try:
         # 1. Buy all
-        full_quantity_fiat = client.coin_info("GBP")
+        full_quantity_fiat: float = client.account_balance_by_symbol("GBP")
+
         client.market_order(Side.buy, full_quantity_fiat)
         # 2. Remove stops
         client.cancel_all_open_orders_for_type(OrderType.stop_loss_limit)
@@ -41,7 +42,7 @@ def sell(window_min, window_max, units, latest_row, client):
 
     try:
         # 1. Sell all
-        full_quantity_crypto = client.get_market_position()
+        full_quantity_crypto = client.account_balance_by_symbol("ETH")
         client.market_order(Side.sell, full_quantity_crypto)
         # 2. Remove all stops
         client.cancel_all_open_orders_for_type(OrderType.stop_loss_limit)
