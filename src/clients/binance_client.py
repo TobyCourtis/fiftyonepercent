@@ -179,7 +179,8 @@ class BinanceClient:
             if save_image:
                 create_image_from_dataframe(open_orders, open_orders_path, "Open Orders")
             if not self.test:
-                slack_image_upload.upload_image(open_orders_path, "PnL", f"Number of Open Orders: {len(response)}")
+                slack_image_upload.upload_image(open_orders_path, "PnL", f"Number of Open Orders: {len(response)}",
+                                                "prod-trades")
             return open_orders
 
         except ClientError as error:
@@ -276,7 +277,8 @@ class BinanceClient:
 
             pnl_df = pd.concat(pnl_df, axis=1)
             pnl_df.set_index('Symbol', inplace=True)
-            pnl_df[['QTY', 'WAP', 'FEE', 'PnL']] = (pnl_df[['QTY', 'WAP', 'FEE', 'PnL']].astype(float)).round(1)
+            pnl_df[['QTY', 'WAP', 'FEE', 'PnL']] = (pnl_df[['QTY', 'WAP', 'FEE', 'PnL']].astype(float)).round(
+                self.PRECISION)
             pnl_df = pnl_df.replace(np.nan, "-")
 
             current_dir = os.path.dirname(os.path.realpath(__file__))
@@ -286,8 +288,8 @@ class BinanceClient:
             print(pnl_df)
             if not self.test:
                 slack_image_upload.upload_image(pnl_snapshot_path, "PnL",
-                                                f"PnL Tables - PnL: {round(total_df.loc[0, 'PnL'], 2)} "
-                                                f"Qty: {round(total_df.loc[0, 'QTY'], 2)}",
+                                                f"PnL Tables - PnL: {round(total_df.loc[0, 'PnL'], self.PRECISION)} "
+                                                f"Qty: {round(total_df.loc[0, 'QTY'], self.PRECISION)}",
                                                 "prod-data")
             return pnl_df
 

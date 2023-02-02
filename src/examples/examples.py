@@ -25,14 +25,8 @@ def test_create_ma_crossover():
     all_candles.create_crossover_graph(1, 2, units="hours", save=False)
 
 
-def place_testnet_market_order():
-    client = BinanceClient(test=True)
-    client.market_order(Side.sell, 1, "ETHUSDT")
-    print(client.position_summary())
-
-
-def report_summary_position_risk():
-    client = BinanceClient(test=True)
+def _position_summary(test):
+    client = BinanceClient(test=test)
     print(client.position_summary())
 
 
@@ -152,10 +146,11 @@ def _get_open_order_ids(test):
 
 if __name__ == "__main__":
     test = False
+    _position_summary(test=test)
     # _account_balance_by_symbol(test=test, symbol="GBP")
     # _account_balance_by_symbol(test=test, symbol="ETH")
     # _account_balance_by_symbol(test=test, symbol="ETH", include_locked=True)
     # _ma_crossover_buy(test=test)
     # _ma_crossover_sell(test)
 
-    _get_open_order_ids(test=test)
+    # _get_open_order_ids(test=test)
