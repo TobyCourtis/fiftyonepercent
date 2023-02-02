@@ -116,7 +116,11 @@ class BinanceClient:
     def get_open_order_ids(self, order_type_filter=None, save_image=True) -> DataFrame:
         open_orders = self.show_open_orders(order_type_filter=order_type_filter, save_image=save_image)
 
-        open_order_ids = open_orders['OrderId'].tolist()
+        if len(open_orders) == 0:
+            open_order_ids = []
+        else:
+            open_order_ids = open_orders['OrderId'].tolist()
+
         print("Open order IDs:")
         print(open_order_ids)
         return open_order_ids

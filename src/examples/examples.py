@@ -152,10 +152,10 @@ def _get_open_order_ids(test):
 
 if __name__ == "__main__":
     test = False
-    _account_balance_by_symbol(test=test, symbol="GBP")
-    _account_balance_by_symbol(test=test, symbol="ETH")
-    _account_balance_by_symbol(test=test, symbol="ETH", include_locked=True)
+    # _account_balance_by_symbol(test=test, symbol="GBP")
+    # _account_balance_by_symbol(test=test, symbol="ETH")
+    # _account_balance_by_symbol(test=test, symbol="ETH", include_locked=True)
     # _ma_crossover_buy(test=test)
-    _ma_crossover_sell(test)
+    # _ma_crossover_sell(test)
 
-    _show_open_orders(test=test)
+    _get_open_order_ids(test=test)
