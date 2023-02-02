@@ -9,7 +9,7 @@ import json
 import pandas as pd
 
 from src.clients.binance_client import BinanceClient
-from src.clients.helpers import Side
+from src.clients.helpers import Side, OrderType
 from src.clients.ma_crossover_utils import buy, sell
 
 
@@ -36,9 +36,9 @@ def report_summary_position_risk():
     print(client.position_summary())
 
 
-def get_live_orders(filter=None):
-    client = BinanceClient(test=True)
-    print(client.show_open_orders(order_type_filter=filter))
+def _show_open_orders(test=True, filter=None):
+    client = BinanceClient(test=test)
+    client.show_open_orders(order_type_filter=filter, save_image=False)
 
 
 def get_test_market_position():
@@ -52,7 +52,7 @@ def get_prod_market_position():
 
 
 def place_limit_order(price):
-    client = BinanceClient(test=True)
+    client = BinanceClient(test=False)
     client.place_limit_order(side=Side.buy, price=price)
 
 
@@ -111,23 +111,23 @@ def dummy_dataframe():
     return pd.DataFrame(data, index=index)
 
 
-def _ma_crossover_buy():
+def _ma_crossover_buy(test):
     ma_crossover_dataframe = dummy_dataframe()
     dummy_latest_row = ma_crossover_dataframe.iloc[-1]
-    client = BinanceClient(test=False)
+    client = BinanceClient(test=test)
     buy(1, 2, "hours", dummy_latest_row, client)
 
 
-def _ma_crossover_sell():
+def _ma_crossover_sell(test):
     ma_crossover_dataframe = dummy_dataframe()
     dummy_latest_row = ma_crossover_dataframe.iloc[-1]
-    client = BinanceClient(test=False)
+    client = BinanceClient(test=test)
     sell(1, 2, "hours", dummy_latest_row, client)
 
 
-def get_account_balance(test, symbol=None):
+def _account_balance_by_symbol(test, symbol=None, include_locked=False):
     client = BinanceClient(test=test)
-    client.account_balance_by_symbol(symbol)
+    client.account_balance_by_symbol(symbol, include_locked)
 
 
 def _all_account_info(test):
@@ -137,8 +137,25 @@ def _all_account_info(test):
 
 def _get_account_balance_position_type(test):
     client = BinanceClient(test=test)
-    client.get_account_balance_position_type()
+    print(client.get_account_balance_position_type())
+
+
+def _market_sell_only():
+    client = BinanceClient(test=False)
+    client.market_order(Side.sell, 0.0151)
+
+
+def _get_open_order_ids(test):
+    client = BinanceClient(test=test)
+    client.get_open_order_ids(order_type_filter=OrderType.stop_loss_limit)
 
 
 if __name__ == "__main__":
-    _get_account_balance_position_type(False)
+    test = False
+    _account_balance_by_symbol(test=test, symbol="GBP")
+    _account_balance_by_symbol(test=test, symbol="ETH")
+    _account_balance_by_symbol(test=test, symbol="ETH", include_locked=True)
+    # _ma_crossover_buy(test=test)
+    _ma_crossover_sell(test)
+
+    _show_open_orders(test=test)
