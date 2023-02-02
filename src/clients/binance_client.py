@@ -2,6 +2,7 @@ import datetime
 import datetime as dt
 import json
 import os
+import traceback
 from pprint import pprint
 
 import numpy as np
@@ -422,7 +423,7 @@ class BinanceClient:
             response = self.client.new_order(**params)
             fills = response['fills']
             qty, wap = self.get_qty_and_wap_from_fills(fills)
-            order_message = f"{Side.value} order filled. " \
+            order_message = f"{side.value} order filled. " \
                             f"Qty: {round(qty, self.PRECISION)} price: {round(wap, self.PRECISION)}"
             if not self.test:
                 notifier.slack_notify(order_message, "prod-trades")
@@ -430,10 +431,13 @@ class BinanceClient:
             return order_message
         except ClientError as error:
             print(
-                "Found error. status: {}, error code: {}, error message: {}".format(
+                "Caught client error. status: {}, error code: {}, error message: {}".format(
                     error.status_code, error.error_code, error.error_message
                 )
             )
+        except Exception as e:
+            traceback.print_exc()
+            print(f"Market order threw the exception: {e}")
 
     def get_qty_and_wap_from_fills(self, fills):
         qty = 0
