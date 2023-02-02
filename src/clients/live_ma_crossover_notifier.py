@@ -55,7 +55,7 @@ def notify_ma_crossover(window_min, window_max, units, test=True):
         print(ma_crossover_dataframe.tail())
 
         suggested_position = all_candles.suggested_position_type(ma_crossover_dataframe)
-        current_position = client.get_account_balance_position_type()
+        current_position = client.get_account_balance_position_type(include_locked=True)
 
         latest_row = ma_crossover_dataframe.iloc[-1]
 
@@ -78,7 +78,7 @@ def notify_ma_crossover(window_min, window_max, units, test=True):
             """
             AVOIDING REPEAT BUY
             """
-            symbol_qty = client.get_account_balance_position_type()
+            symbol_qty = client.account_balance_by_symbol(include_locked=True)
             message = f"Buy signal not executed. Symbol quantity is greater than 0 ({symbol_qty})"
             print(message)
             if last_notified_state != LastNotifiedState.avoid_repeat_buy:
@@ -89,7 +89,7 @@ def notify_ma_crossover(window_min, window_max, units, test=True):
             """
             AVOIDING REPEAT SELL
             """
-            symbol_qty = client.get_account_balance_position_type()
+            symbol_qty = client.account_balance_by_symbol(include_locked=True)
             message = f"Sell signal not executed. Symbol quantity already 0 ({symbol_qty})"
             print(message)
             if last_notified_state != LastNotifiedState.avoid_repeat_sell:
