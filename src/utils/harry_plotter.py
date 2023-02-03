@@ -3,7 +3,7 @@ import time
 import plotly.graph_objects as go
 
 from src.client.binance_client import BinanceClient
-from src.client.candlesticks import Candlesticks
+from src.types.candlesticks import Candlesticks
 
 
 def plot(candles: Candlesticks):

@@ -11,8 +11,8 @@ from binance.error import ClientError
 from binance.spot import Spot
 from pandas import DataFrame
 
-from src.client.candlesticks import Candlesticks
 from src.notify import notifier, slack_image_upload
+from src.types.candlesticks import Candlesticks
 from src.utils.utils import Side, epoch_to_date, create_image_from_dataframe, OrderType, add_spacing, PositionType, \
     round_down_to_decimal_place
 

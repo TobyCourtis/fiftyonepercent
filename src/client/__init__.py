@@ -6,4 +6,3 @@ if root_path not in sys.path:
     sys.path.append(root_path)
 
 from . import binance_client
-from . import candlesticks
