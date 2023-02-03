@@ -1,10 +1,10 @@
 import unittest
 from unittest.mock import MagicMock
 
-from src.clients import ma_crossover_utils
 from src.clients.binance_client import BinanceClient
 from src.clients.candlesticks import Candlesticks
 from src.notify import notifier, slack_image_upload
+from src.utils import ma_crossover_utils
 from src.utils.utils import Side, OrderType
 
 """

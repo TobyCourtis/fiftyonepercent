@@ -9,7 +9,7 @@ import json
 import pandas as pd
 
 from src.clients.binance_client import BinanceClient
-from src.clients.ma_crossover_utils import buy, sell
+from src.utils.ma_crossover_utils import buy, sell
 from src.utils.utils import Side, OrderType
 
 
