@@ -5,7 +5,7 @@ root_path = str(Path(__file__).parent.parent.parent)
 if root_path not in sys.path:
     sys.path.append(root_path)
 
-from binance_client import BinanceClient
+from src.client.binance_client import BinanceClient
 from src.utils.utils import epoch_to_date, epoch_to_minutes, add_spacing, PositionType, Side, LastNotifiedState
 from src.utils.ma_crossover_utils import notify_current_transaction, send_update_snapshot, buy, sell, \
     sleep_until_next_candle_released
