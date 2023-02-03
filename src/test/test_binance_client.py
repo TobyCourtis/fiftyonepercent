@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 
 from binance.spot import Spot
 
-from src.clients.binance_client import BinanceClient
+from src.client.binance_client import BinanceClient
 from src.notify import notifier
 from src.utils.utils import Side, PositionType
 

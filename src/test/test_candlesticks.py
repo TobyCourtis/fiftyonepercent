@@ -2,7 +2,7 @@ import unittest
 
 import pandas as pd
 
-from src.clients.candlesticks import Candlesticks
+from src.client.candlesticks import Candlesticks
 from src.utils.utils import Side
 
 

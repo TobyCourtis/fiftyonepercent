@@ -1,10 +1,9 @@
-import plotly.graph_objects as go
-
-from binance_client import BinanceClient
-
 import time
 
-from src.clients.candlesticks import Candlesticks
+import plotly.graph_objects as go
+
+from src.client.binance_client import BinanceClient
+from src.client.candlesticks import Candlesticks
 
 
 def plot(candles: Candlesticks):

@@ -11,7 +11,7 @@ from binance.error import ClientError
 from binance.spot import Spot
 from pandas import DataFrame
 
-from src.clients.candlesticks import Candlesticks
+from src.client.candlesticks import Candlesticks
 from src.notify import notifier, slack_image_upload
 from src.utils.utils import Side, epoch_to_date, create_image_from_dataframe, OrderType, add_spacing, PositionType, \
     round_down_to_decimal_place
@@ -173,7 +173,7 @@ class BinanceClient:
             open_orders.set_index('Symbol', inplace=True)
 
             current_dir = os.path.dirname(os.path.realpath(__file__))
-            open_orders_path = f"{current_dir}/../clients/current_open_orders_snapshot.png"
+            open_orders_path = f"{current_dir}/../client/current_open_orders_snapshot.png"
 
             print(open_orders)
             if save_image:
@@ -282,7 +282,7 @@ class BinanceClient:
             pnl_df = pnl_df.replace(np.nan, "-")
 
             current_dir = os.path.dirname(os.path.realpath(__file__))
-            pnl_snapshot_path = f"{current_dir}/../clients/current_pnl_snapshot.png"
+            pnl_snapshot_path = f"{current_dir}/../client/current_pnl_snapshot.png"
             create_image_from_dataframe(pnl_df, pnl_snapshot_path, "PnL Summary")
 
             print(pnl_df)
