@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from src.clients.helpers import epoch_to_date, convert_to_hours, Side
+from src.clients.utils import epoch_to_date, convert_to_hours, Side
 
 
 class Candlesticks:

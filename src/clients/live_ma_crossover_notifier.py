@@ -6,7 +6,7 @@ if root_path not in sys.path:
     sys.path.append(root_path)
 
 from binance_client import BinanceClient
-from helpers import epoch_to_date, epoch_to_minutes, add_spacing, PositionType, Side, LastNotifiedState
+from utils import epoch_to_date, epoch_to_minutes, add_spacing, PositionType, Side, LastNotifiedState
 from ma_crossover_utils import notify_current_transaction, send_update_snapshot, buy, sell, \
     sleep_until_next_candle_released
 

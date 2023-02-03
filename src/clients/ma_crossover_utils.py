@@ -2,7 +2,7 @@ import datetime
 import time
 import traceback
 
-from src.clients.helpers import Side, OrderType, add_spacing, bruce_buffer
+from src.clients.utils import Side, OrderType, add_spacing, bruce_buffer
 from src.notify import notifier, slack_image_upload
 
 STOP_LOSS_MULTIPLIER = 0.9

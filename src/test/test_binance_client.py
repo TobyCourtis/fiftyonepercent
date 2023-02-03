@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 from binance.spot import Spot
 
 from src.clients.binance_client import BinanceClient
-from src.clients.helpers import Side, PositionType
+from src.clients.utils import Side, PositionType
 from src.notify import notifier
 
 market_order_return_value = {
