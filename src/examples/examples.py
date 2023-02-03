@@ -10,7 +10,7 @@ import pandas as pd
 
 from src.clients.binance_client import BinanceClient
 from src.clients.ma_crossover_utils import buy, sell
-from src.clients.utils import Side, OrderType
+from src.utils.utils import Side, OrderType
 
 
 def create_ma_crossover():

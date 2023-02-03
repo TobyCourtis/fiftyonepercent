@@ -3,7 +3,7 @@ import unittest
 import pandas as pd
 
 from src.clients.candlesticks import Candlesticks
-from src.clients.utils import Side
+from src.utils.utils import Side
 
 
 def variable_length_candlesticks(length):

@@ -2,8 +2,8 @@ import datetime
 import time
 import traceback
 
-from src.clients.utils import Side, OrderType, add_spacing, bruce_buffer
 from src.notify import notifier, slack_image_upload
+from src.utils.utils import Side, OrderType, add_spacing, bruce_buffer
 
 STOP_LOSS_MULTIPLIER = 0.9
 ETH_PRECISION = 8
@@ -81,7 +81,6 @@ def sleep_until_next_candle_released(new_start_time):
     new_start_datetime = datetime.datetime.fromtimestamp(int(new_start_time / 1000))
     seconds_elapsed = (datetime.datetime.now() - new_start_datetime).total_seconds()
     sleep_time = 60 - seconds_elapsed
-    print(sleep_time)
     if sleep_time <= 0:
         pass
     else:
