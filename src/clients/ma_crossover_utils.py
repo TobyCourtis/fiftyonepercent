@@ -30,11 +30,7 @@ def buy(window_min, window_max, units, latest_row, client):
         full_quantity_fiat: float = client.account_balance_by_symbol("GBP")
         client.market_order(Side.buy, full_quantity_fiat)
 
-        # TODO - Step 2 here could be redundant
-        # # 2. Remove stops
-        # client.cancel_all_open_orders_for_type(OrderType.stop_loss_limit)
-
-        # 3. Replace stops
+        # 2. Replace stops
         stop_price = round(client.avg_price() * STOP_LOSS_MULTIPLIER, ETH_PRECISION)
         client.place_stop_order(stop_price)
     except Exception as e:
