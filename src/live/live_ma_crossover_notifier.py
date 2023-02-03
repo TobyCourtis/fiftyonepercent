@@ -78,7 +78,7 @@ def notify_ma_crossover(window_min, window_max, units, test=True):
             AVOIDING REPEAT BUY
             """
             symbol_qty = client.account_balance_by_symbol(include_locked=True)
-            message = f"Buy signal not executed. Symbol quantity is greater than 0 ({symbol_qty})"
+            message = f"Buy signal not executed. Symbol quantity is greater than 0 ({round(symbol_qty, 8)})"
             print(message)
             if last_notified_state != LastNotifiedState.avoid_repeat_buy:
                 notify_current_transaction(message, latest_row, units, window_max, window_min)
@@ -89,7 +89,7 @@ def notify_ma_crossover(window_min, window_max, units, test=True):
             AVOIDING REPEAT SELL
             """
             symbol_qty = client.account_balance_by_symbol(include_locked=True)
-            message = f"Sell signal not executed. Symbol quantity already 0 ({symbol_qty})"
+            message = f"Sell signal not executed. Symbol quantity already 0 ({round(symbol_qty, 8)})"
             print(message)
             if last_notified_state != LastNotifiedState.avoid_repeat_sell:
                 notify_current_transaction(message, latest_row, units, window_max, window_min)
