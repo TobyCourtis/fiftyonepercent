@@ -51,7 +51,7 @@ def run_back_test():
 
 def save_candle_history(candles: Candlesticks):
     current_dir = os.path.dirname(os.path.realpath(__file__))
-    file_path = f'{current_dir}/all_history.pkl'
+    file_path = f'{current_dir}/candlestick_history.pkl'
     with open(file_path, 'wb+') as file:
         pickle.dump(candles, file)
     print(f"Saved candle history to: {file_path}. Length={len(candles)}")
@@ -60,7 +60,7 @@ def save_candle_history(candles: Candlesticks):
 def read_candle_history():
     all_candle_history = Candlesticks()
     try:
-        with open(f'all_history.pkl', 'rb+') as file:
+        with open(f'candlestick_history.pkl', 'rb+') as file:
             all_candle_history = pickle.load(file)
         print(f"Read candle history of length: {len(all_candle_history)}")
         return all_candle_history
@@ -138,4 +138,4 @@ def temp_get_klines():
 
 
 if __name__ == '__main__':
-    get_cache_and_add_to_candles(days=4)
+    get_cache_and_add_to_candles(days=700)  # 1008 calls, all history

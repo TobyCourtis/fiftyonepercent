@@ -7,3 +7,4 @@
 /src/_trial_temp/
 /src/client/*.png
 /src/examples/*.json
+src/back_test/candlestick_history.pkl
