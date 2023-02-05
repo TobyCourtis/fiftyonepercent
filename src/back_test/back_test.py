@@ -1,8 +1,9 @@
+import datetime
 import pickle
 
 from src.client.binance_client import BinanceClient
 from src.types.candlesticks import Candlesticks
-from src.utils.utils import bruce_buffer
+from src.utils.utils import bruce_buffer, one_minute_as_epoch
 
 
 def run_back_test():
@@ -47,23 +48,88 @@ def run_back_test():
             print(f"Units={units}, Short={short_window}, Long={long_window}, Buys={buys}, Sells={sells}, PNL={PNL}")
 
 
-def save_candle():
-    client = BinanceClient(test=False)
-    days = 120
-    units = 'days'
-    candles = client.get_klines("1m", days=days)
-    with open(f'candle_history_{str(days)}_{units}.pkl', 'wb+') as file:
+def save_candle_history(candles: Candlesticks):
+    with open(f'all_history.pkl', 'wb+') as file:
         pickle.dump(candles, file)
 
 
-def read_candle():
-    candles = Candlesticks()
-    days = 120
-    units = 'days'
-    with open(f'candle_history_{str(days)}_{units}.pkl', 'rb+') as file:
-        candles = pickle.load(file)
-    print(f"I found: {len(candles)} candles")
+def read_candle_history():
+    all_candle_history = Candlesticks()
+    try:
+        with open(f'all_history.pkl', 'rb+') as file:
+            all_candle_history = pickle.load(file)
+        print(f"Length candle history: {len(all_candle_history)}")
+        return all_candle_history
+    except FileNotFoundError:
+        print("No history found, fetching now.")
+        return None
+
+
+def get_cache_and_add_to_candles(**kwargs):
+    client = BinanceClient(test=False)
+
+    # 1. get history
+    all_candle_history: Candlesticks = read_candle_history()
+
+    # 2. get required start time
+    if "startTime" in kwargs:
+        startTime = kwargs['startTime']
+    else:
+        startTime = (datetime.datetime.now() - datetime.timedelta(**kwargs)).timestamp() * 1000
+
+    # 3. get important history data (start and end times)
+    if all_candle_history is not None:
+        """
+        The usage of the below variables is important.
+        
+        Open time = 00:47:00 (47m)
+        Close time = 00:47:59.999
+        
+        Inputting 47:00 into get_klines returns first candle starting openTime 47:00
+        Inputting 47:01 into get_klines returns first candle strating openTime 48:00
+        
+        Each check done is very specific to fetching 
+        """
+        history_first_open_time = all_candle_history.openTime[0]
+        history_first_close_time = all_candle_history.closeTime[0]
+        history_end_open_time = all_candle_history.openTime[-1]
+        history_end_close_time = all_candle_history.closeTime[-1]
+
+    # 4. Check if history exists and if the required new startTime is within the candlestick history
+    # add on 1second to start time to account for when you first getCandles() the close time of the returned candle
+    # is startTime to the next WHOLE minutes (so it's simple here just to add on 1 minute)
+    if all_candle_history is not None and (startTime + one_minute_as_epoch) >= history_first_open_time:
+        """
+        START TIME WITHIN HISTORY SO ONLY FETCHING NEW CANDLES
+        """
+        timeNow = datetime.datetime.now().timestamp() * 1000  # acts as endTime in get_klines
+
+        # check if candle history is already up-to-date
+        if timeNow < history_end_close_time:
+            print("Do not fetch any more candles. History is up to date")
+        else:
+            # fetch only the new candles to append to the history
+            new_candles = client.get_klines(startTime=(history_end_open_time + one_minute_as_epoch))
+            if len(new_candles) != 0:
+                all_candle_history.add(new_candles)
+                save_candle_history(all_candle_history)
+            else:
+                print("Candle history is already up to date. Case 2. (shouldn't really reach here)")
+    else:
+        """
+        START TIME BEFORE HISTORY SO FETCHING AND SAVING EVERYTHING FROM START TO NOW. 
+        """
+        print('* FETCHING NEW HISTORY *')
+        new_candle_history = client.get_klines(**kwargs)
+        print(f"New candle history: {len(new_candle_history)}")
+        save_candle_history(new_candle_history)
+
+
+def temp_get_klines():
+    client = BinanceClient(test=False)
+    candles = client.get_klines(startTime=1675536420001.000)
+    return candles
 
 
 if __name__ == '__main__':
-    read_candle()
+    get_cache_and_add_to_candles(days=4)

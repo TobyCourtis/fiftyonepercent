@@ -1,3 +1,4 @@
+import datetime
 import datetime as dt
 import math
 import os
@@ -48,11 +49,15 @@ def convert_to_hours(window_min, window_max, units):
 # Important: Will round 14:03:59 > 14:04:00 for graph readability
 epoch_to_date = lambda epoch: time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(math.ceil(int(epoch) / 1000)))
 
+epoch_to_date_ms = lambda epoch: datetime.datetime.fromtimestamp(epoch / 1000).strftime('%Y-%m-%d %H:%M:%S.%f')
+
 epoch_to_minutes = lambda epoch: int(epoch_to_date(epoch)[-5:-3])
 
 format_markdown = lambda markdown_table: "```\n" + markdown_table.to_markdown() + "\n```"
 
 add_spacing = lambda text: f"\n{text}\n"
+
+one_minute_as_epoch = 60 * 1000
 
 
 def enum_equality_check(original, other):
