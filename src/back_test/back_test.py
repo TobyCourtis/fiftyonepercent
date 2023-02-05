@@ -1,4 +1,5 @@
 import datetime
+import os
 import pickle
 
 from src.client.binance_client import BinanceClient
@@ -49,8 +50,11 @@ def run_back_test():
 
 
 def save_candle_history(candles: Candlesticks):
-    with open(f'all_history.pkl', 'wb+') as file:
+    current_dir = os.path.dirname(os.path.realpath(__file__))
+    file_path = f'{current_dir}/all_history.pkl'
+    with open(file_path, 'wb+') as file:
         pickle.dump(candles, file)
+    print(f"Saved candle history to: {file_path}. Length={len(candles)}")
 
 
 def read_candle_history():
@@ -58,7 +62,7 @@ def read_candle_history():
     try:
         with open(f'all_history.pkl', 'rb+') as file:
             all_candle_history = pickle.load(file)
-        print(f"Length candle history: {len(all_candle_history)}")
+        print(f"Read candle history of length: {len(all_candle_history)}")
         return all_candle_history
     except FileNotFoundError:
         print("No history found, fetching now.")
@@ -107,12 +111,14 @@ def get_cache_and_add_to_candles(**kwargs):
         # check if candle history is already up-to-date
         if timeNow < history_end_close_time:
             print("Do not fetch any more candles. History is up to date")
+            return all_candle_history
         else:
             # fetch only the new candles to append to the history
             new_candles = client.get_klines(startTime=(history_end_open_time + one_minute_as_epoch))
             if len(new_candles) != 0:
                 all_candle_history.add(new_candles)
                 save_candle_history(all_candle_history)
+                return all_candle_history
             else:
                 print("Candle history is already up to date. Case 2. (shouldn't really reach here)")
     else:
@@ -121,8 +127,8 @@ def get_cache_and_add_to_candles(**kwargs):
         """
         print('* FETCHING NEW HISTORY *')
         new_candle_history = client.get_klines(**kwargs)
-        print(f"New candle history: {len(new_candle_history)}")
         save_candle_history(new_candle_history)
+        return new_candle_history
 
 
 def temp_get_klines():
