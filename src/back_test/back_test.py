@@ -8,12 +8,22 @@ from src.utils.utils import bruce_buffer, one_minute_as_epoch
 
 
 def run_back_test():
-    client = BinanceClient(test=False)
-    days = 40
-    candles = client.get_klines("1m", days=days)
+    days_from = 699
+    days_to = 639
+    duration = 699 - (days_to if days_to is not None else 0)
+
+    candles_in_day = 1440
+
+    candles = get_cache_and_add_to_candles(days=700)
+
+    print(f"Length: {len(candles)}")
+    candles.shorten(from_limit=(days_from * candles_in_day), to_limit=(days_to * candles_in_day))
+    print(f"Length: {len(candles)}")
     bruce_buffer()
 
-    print(f"PNL for the past {days} days using different strategies:")
+    print(
+        f"PNL for {duration} days starting {days_from} days ago"
+        f" {f'ending {days_to} days ago ' if days_to is not None else ''}using different strategies:")
     for j in range(2):
         if j == 0:
             units = "hours"
@@ -52,7 +62,7 @@ def run_back_test():
 def save_candle_history(candles: Candlesticks):
     current_dir = os.path.dirname(os.path.realpath(__file__))
     file_path = f'{current_dir}/candlestick_history.pkl'
-    with open(file_path, 'wb+') as file:
+    with open(file_path, 'wb') as file:
         pickle.dump(candles, file)
     print(f"Saved candle history to: {file_path}. Length={len(candles)}")
 
@@ -60,7 +70,7 @@ def save_candle_history(candles: Candlesticks):
 def read_candle_history():
     all_candle_history = Candlesticks()
     try:
-        with open(f'candlestick_history.pkl', 'rb+') as file:
+        with open(f'candlestick_history.pkl', 'rb') as file:
             all_candle_history = pickle.load(file)
         print(f"Read candle history of length: {len(all_candle_history)}")
         return all_candle_history
@@ -138,4 +148,5 @@ def temp_get_klines():
 
 
 if __name__ == '__main__':
-    get_cache_and_add_to_candles(days=700)  # 1008 calls, all history
+    # get_cache_and_add_to_candles(days=701)  # 1008 calls, all history
+    run_back_test()
