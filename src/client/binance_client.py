@@ -254,36 +254,58 @@ class BinanceClient:
                 trade_history = self.client.my_trades(symbol=symbol)
                 live_px = float(self.client.ticker_price(symbol=symbol)['price'])
                 symbol_data = []
+                test_df = pd.DataFrame(trade_history)
                 for trade_info in trade_history:
                     coin_data = {}
                     coin_data['Symbol'] = trade_info['symbol']
-                    coin_data['QTY'] = float(trade_info['qty']) if trade_info['isBuyer'] == True else float(
-                        trade_info['qty']) * -1
-                    coin_data['WAP'] = float(trade_info['price']) * float(trade_info['qty'])
-                    coin_data['FEE'] = float(trade_info['commission'])
-                    coin_data['Side'] = 'Buy' if trade_info['isBuyer'] == True else 'Sell'  # 1 is buy and 0 Sell
-                    coin_data['PnL'] = ((live_px - float(trade_info['price'])) * float(coin_data['QTY'])) - float(
-                        trade_info['commission'])
+                    coin_data['FEE'] = float(
+                        trade_info['commission'])  # Commision for sells are in GBP and Coin for Buys
+                    coin_data['live_px'] = live_px
+                    coin_data['trade_price'] = trade_info['price']
+
+                    if trade_info['isBuyer'] == True:  # Trade is a buy
+                        coin_data['Side'] = 'Buy'
+                        coin_data['QTY'] = float(trade_info['qty']) - float(
+                            trade_info['commission'])  # Remove commission from buy
+                        coin_data['WAP'] = float(trade_info['price']) * coin_data[
+                            'QTY']  # Create weight for working out the weighted average buy price
+                        coin_data['PnL'] = ((live_px - float(trade_info['price'])) * float(coin_data['QTY'])) - float(
+                            trade_info['commission']) * float(trade_info['price'])
+                        coin_data['FEE'] = float(trade_info['commission']) * float(
+                            trade_info['price'])  # Commision for sells are in GBP and Coin for Buys
+                        # Don't include the commission as it's already removed from the qty
+
+                    else:  # Trade is a Sell
+                        coin_data['Side'] = 'Sell'
+                        coin_data['QTY'] = float(trade_info['qty']) * -1  # if a sell make the qty negative
+                        coin_data['WAP'] = float(trade_info['price']) * coin_data[
+                            'QTY']  # Create weight for working out the weighted average buy price
+                        coin_data['PnL'] = ((live_px - float(trade_info['price'])) * float(coin_data['QTY'])) - float(
+                            trade_info['commission'])  # Sub the commission as it's a GBP cost
+                        coin_data['FEE'] = float(
+                            trade_info['commission'])  # Commision for sells are in GBP and Coin for Buys
+
                     symbol_data.append(coin_data)
                 symbol_data = pd.DataFrame(symbol_data)
                 symbol_data = symbol_data.groupby(['Symbol', 'Side']).sum()
                 symbol_data['WAP'] = abs(symbol_data['WAP'] / symbol_data['QTY'])
                 symbol_data.reset_index(inplace=True)
-                total_df = pd.DataFrame(
-                    [symbol, 'Total', symbol_data.QTY.sum(), np.nan, symbol_data.FEE.sum(), symbol_data.PnL.sum()],
-                    index=symbol_data.columns).T
+                symbol_data = symbol_data[['Symbol', 'Side', 'QTY', 'WAP', 'FEE', 'PnL']]
+                symbol_data[['QTY', 'WAP', 'FEE', 'PnL']] = (
+                    symbol_data[['QTY', 'WAP', 'FEE', 'PnL']].astype(float)).round(self.PRECISION)
+                total_df = pd.DataFrame([symbol, 'Total', round(symbol_data.QTY.sum(), self.PRECISION), np.nan,
+                                         round(symbol_data.FEE.sum(), self.PRECISION),
+                                         round(symbol_data.PnL.sum(), self.PRECISION)], index=symbol_data.columns).T
                 symbol_data = symbol_data.append(total_df)
                 pnl_df.append(symbol_data)
 
             pnl_df = pd.concat(pnl_df, axis=1)
             pnl_df.set_index('Symbol', inplace=True)
-            pnl_df[['QTY', 'WAP', 'FEE', 'PnL']] = (pnl_df[['QTY', 'WAP', 'FEE', 'PnL']].astype(float)).round(
-                self.PRECISION)
             pnl_df = pnl_df.replace(np.nan, "-")
 
             current_dir = os.path.dirname(os.path.realpath(__file__))
             pnl_snapshot_path = f"{current_dir}/../client/current_pnl_snapshot.png"
-            create_image_from_dataframe(pnl_df, pnl_snapshot_path, "PnL Summary")
+            create_image_from_dataframe(pnl_df, pnl_snapshot_path, f"PnL Summary - ETH Price: {live_px}")
 
             print(pnl_df)
             if not self.test:
