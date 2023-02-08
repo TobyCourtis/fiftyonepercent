@@ -9,7 +9,7 @@ from src.utils.utils import bruce_buffer, one_minute_as_epoch
 
 def run_back_test():
     days_from = 699
-    days_to = 639
+    days_to = None
     duration = 699 - (days_to if days_to is not None else 0)
 
     candles_in_day = 1440
@@ -17,46 +17,48 @@ def run_back_test():
     candles = get_cache_and_add_to_candles(days=700)
 
     print(f"Length: {len(candles)}")
-    candles.shorten(from_limit=(days_from * candles_in_day), to_limit=(days_to * candles_in_day))
+    candles.shorten(from_limit=(days_from * candles_in_day),
+                    to_limit=(days_to * candles_in_day) if days_to is not None else None)
     print(f"Length: {len(candles)}")
     bruce_buffer()
 
     print(
         f"PNL for {duration} days starting {days_from} days ago"
         f" {f'ending {days_to} days ago ' if days_to is not None else ''}using different strategies:")
-    for j in range(2):
-        if j == 0:
+    for i in range(2):
+        if i == 0:
             units = "hours"
         else:
             units = "days"
-        for i in range(1, 12):
-            buys = 0
-            sells = 0
-            short_window = i
-            long_window = short_window * 2
-            df = candles.create_ma_crossover_dataframe(short_window, long_window, units=units)
-            PNL = None
-            last_pos = None
-            for index, row in df.iterrows():
-                if row['Position'] == 1:
-                    if PNL is None:
-                        PNL = 0
-                    PNL -= row['Close']  # minus buys
-                    buys += 1
-                    last_pos = 'buy'
-                elif row['Position'] == -1:
-                    if PNL is not None:
-                        PNL += row['Close']  # add the sells
-                        sells += 1
-                        last_pos = 'sell'
-            # end by selling at current value?
-            if last_pos is not None:
-                if last_pos == 'buy':
-                    # fake sell
-                    last_row = df.iloc[-1]
-                    PNL += last_row['Close']  # add a final sell to sort PNL
+        for j in range(1, 12):
+            for k in range(2, 6):
+                buys = 0
+                sells = 0
+                short_window = j
+                long_window = short_window * k
+                df = candles.create_ma_crossover_dataframe(short_window, long_window, units=units)
+                PNL = None
+                last_pos = None
+                for index, row in df.iterrows():
+                    if row['Position'] == 1:
+                        if PNL is None:
+                            PNL = 0
+                        PNL -= row['Close']  # minus buys
+                        buys += 1
+                        last_pos = 'buy'
+                    elif row['Position'] == -1:
+                        if PNL is not None:
+                            PNL += row['Close']  # add the sells
+                            sells += 1
+                            last_pos = 'sell'
+                # end by selling at current value?
+                if last_pos is not None:
+                    if last_pos == 'buy':
+                        # fake sell
+                        last_row = df.iloc[-1]
+                        PNL += last_row['Close']  # add a final sell to sort PNL
 
-            print(f"Units={units}, Short={short_window}, Long={long_window}, Buys={buys}, Sells={sells}, PNL={PNL}")
+                print(f"Units={units}, Short={short_window}, Long={long_window}, Buys={buys}, Sells={sells}, PNL={PNL}")
 
 
 def save_candle_history(candles: Candlesticks):
