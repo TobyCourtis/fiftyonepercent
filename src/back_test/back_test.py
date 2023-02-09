@@ -9,7 +9,7 @@ from src.utils.utils import bruce_buffer, one_minute_as_epoch
 
 def run_back_test():
     days_from = 699
-    days_to = None
+    days_to = 679
     duration = 699 - (days_to if days_to is not None else 0)
 
     candles_in_day = 1440
