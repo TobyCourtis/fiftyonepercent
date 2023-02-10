@@ -7,7 +7,7 @@ if root_path not in sys.path:
 
 from src.client.binance_client import BinanceClient
 from src.utils.utils import epoch_to_date, epoch_to_minutes, add_spacing, PositionType, Side, LastNotifiedState
-from src.utils.ma_crossover_utils import notify_current_transaction, send_update_snapshot, buy, sell, \
+from src.utils.ma_crossover_utils import send_update_snapshot, buy, sell, \
     sleep_until_next_candle_released
 
 
@@ -78,10 +78,8 @@ def notify_ma_crossover(window_min, window_max, units, test=True):
             AVOIDING REPEAT BUY
             """
             symbol_qty = client.account_balance_by_symbol(include_locked=True)
-            message = f"Buy signal not executed. Symbol quantity is greater than 0 ({round(symbol_qty, 8)})"
-            print(message)
             if last_notified_state != LastNotifiedState.avoid_repeat_buy:
-                notify_current_transaction(message, latest_row, units, window_max, window_min)
+                print(f"Buy signal not executed. Symbol quantity is greater than 0 ({round(symbol_qty, 8)})")
                 last_notified_state = LastNotifiedState.avoid_repeat_buy
 
         elif (suggested_position == Side.sell) & (current_position == PositionType.sold):
@@ -89,10 +87,8 @@ def notify_ma_crossover(window_min, window_max, units, test=True):
             AVOIDING REPEAT SELL
             """
             symbol_qty = client.account_balance_by_symbol(include_locked=True)
-            message = f"Sell signal not executed. Symbol quantity already 0 ({round(symbol_qty, 8)})"
-            print(message)
             if last_notified_state != LastNotifiedState.avoid_repeat_sell:
-                notify_current_transaction(message, latest_row, units, window_max, window_min)
+                print(f"Sell signal not executed. Symbol quantity already 0 ({round(symbol_qty, 8)})")
                 last_notified_state = LastNotifiedState.avoid_repeat_sell
 
         else:
