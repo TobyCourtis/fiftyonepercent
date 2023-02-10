@@ -30,7 +30,7 @@ def upload_image(file_path, title, comment, channel="crypto-trading"):
 
 def upload_current_plot(window_min, window_max, units):
     current_dir = os.path.dirname(os.path.realpath(__file__))
-    graph_snapshot_path = f"{current_dir}/../clients/current_plot_snapshot.png"
+    graph_snapshot_path = f"{current_dir}/../live/current_plot_snapshot.png"
     title = "Current Plot"
     comment = f"Latest plot using windows length {window_min} and {window_max} with units '{units}'"
     upload_image(file_path=graph_snapshot_path, title=title, comment=comment, channel="prod-data")

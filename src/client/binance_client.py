@@ -173,7 +173,7 @@ class BinanceClient:
             open_orders.set_index('Symbol', inplace=True)
 
             current_dir = os.path.dirname(os.path.realpath(__file__))
-            open_orders_path = f"{current_dir}/../client/current_open_orders_snapshot.png"
+            open_orders_path = f"{current_dir}/../live/current_open_orders_snapshot.png"
 
             print(open_orders)
             if save_image:
@@ -304,7 +304,7 @@ class BinanceClient:
             pnl_df = pnl_df.replace(np.nan, "-")
 
             current_dir = os.path.dirname(os.path.realpath(__file__))
-            pnl_snapshot_path = f"{current_dir}/../client/current_pnl_snapshot.png"
+            pnl_snapshot_path = f"{current_dir}/../live/current_pnl_snapshot.png"
             create_image_from_dataframe(pnl_df, pnl_snapshot_path, f"PnL Summary - ETH Price: {live_px}")
 
             print(pnl_df)
