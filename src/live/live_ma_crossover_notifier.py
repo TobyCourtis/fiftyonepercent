@@ -29,7 +29,7 @@ def notify_ma_crossover(window_min, window_max, units, test=True):
     client = BinanceClient(test=test)
 
     # initialise 30 days of candles
-    all_candles = client.get_klines(days=1)
+    all_candles = client.get_klines(days=30)
 
     last_notified_state = LastNotifiedState.un_notified
 
