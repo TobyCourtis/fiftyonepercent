@@ -105,19 +105,40 @@ def dummy_dataframe():
     return pd.DataFrame(data, index=index)
 
 
-def _ma_crossover_buy(test):
+def _ma_crossover_buy_all_test():
     ma_crossover_dataframe = dummy_dataframe()
     dummy_latest_row = ma_crossover_dataframe.iloc[-1]
-    client = BinanceClient(test=test)
+    client = BinanceClient(test=True)
     buy(1, 2, "hours", dummy_latest_row, client)
 
 
-def _ma_crossover_sell(test):
+def _ma_crossover_buy_all_prod():
+    input("\nPress any key to continue with production buy all\n")
+    client = BinanceClient(test=False)
+
+    all_candles = client.get_klines(hours=3)
+    ma_crossover_dataframe = all_candles.create_ma_crossover_dataframe(1, 2, "hours")
+    latest_row = ma_crossover_dataframe.iloc[-1]
+
+    buy("NA", "NA", "manual_buy", latest_row, client)
+
+
+def _ma_crossover_sell_all_test():
     ma_crossover_dataframe = dummy_dataframe()
     dummy_latest_row = ma_crossover_dataframe.iloc[-1]
-    client = BinanceClient(test=test)
+    client = BinanceClient(test=True)
     sell(1, 2, "hours", dummy_latest_row, client)
 
+
+def _ma_crossover_sell_all_prod():
+    input("\nPress any key to continue with production sell all\n")
+    client = BinanceClient(test=False)
+
+    all_candles = client.get_klines(hours=3)
+    ma_crossover_dataframe = all_candles.create_ma_crossover_dataframe(1, 2, "hours")
+    latest_row = ma_crossover_dataframe.iloc[-1]
+
+    sell("NA", "NA", "manual_sell", latest_row, client)
 
 def _account_balance_by_symbol(test, symbol=None, include_locked=False):
     client = BinanceClient(test=test)
@@ -147,6 +168,7 @@ def _get_open_order_ids(test):
 if __name__ == "__main__":
     test = False
     _position_summary(test=test)
+    # _ma_crossover_sell_prod()
     # _account_balance_by_symbol(test=test, symbol="GBP")
     # _account_balance_by_symbol(test=test, symbol="ETH")
     # _account_balance_by_symbol(test=test, symbol="ETH", include_locked=True)
