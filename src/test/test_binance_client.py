@@ -50,8 +50,28 @@ market_order_return_value = {
     ]
 }
 
+kline = [
+    1499040000000,
+    "0.01634790",
+    "0.80000000",
+    "0.01575800",
+    "0.01577100",
+    "148976.11427815",
+    1499644799999,
+    "2434.19055334",
+    308,
+    "1756.87402397",
+    "28.46694368",
+    "17928899.62484339"
+]
+
 mocked_spot_class = Spot()
 mocked_spot_class.new_order = MagicMock(return_value=market_order_return_value)
+mocked_spot_class.klines = MagicMock(side_effect=[ConnectionError("TEST - Somethiing went wrong"),
+                                                  [kline for x in range(30)]])
+
+failing_spot_class = Spot()
+failing_spot_class.klines = MagicMock(side_effect=ConnectionError("TEST - Somethiing went wrong"))
 
 notifier.slack_notify = MagicMock(return_value="nothing!")
 
@@ -76,6 +96,31 @@ def account_balance_by_symbol_sold(one, two):
 
 
 class TestBinanceClient(unittest.TestCase):
+
+    def test_get_klines_fail_then_pass(self):
+        # given binance client
+        tested_binance_client = BinanceClient(test=True)
+
+        with patch.object(tested_binance_client, 'client', mocked_spot_class):
+            self.assertEqual(tested_binance_client.client, mocked_spot_class)
+
+            # when get klines
+            all_candles = tested_binance_client.get_klines(timeframe="1m", hours=17)
+
+            # then klines expected even after a connection errors
+            self.assertEqual(len(all_candles), 30)
+
+    def test_get_klines_only_fail(self):
+        # given binance client that causes constant connection errors
+        tested_binance_client = BinanceClient(test=True)
+
+        with patch.object(tested_binance_client, 'client', failing_spot_class):
+            self.assertEqual(tested_binance_client.client, failing_spot_class)
+
+            # when get klines
+            # then assert Exception was raised
+            with self.assertRaises(Exception):
+                tested_binance_client.get_klines(timeframe="1m", hours=17)
 
     def test_market_order(self):
         tested_binance_client = BinanceClient(test=True)

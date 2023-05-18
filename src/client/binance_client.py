@@ -2,6 +2,7 @@ import datetime
 import datetime as dt
 import json
 import os
+import time
 import traceback
 from pprint import pprint
 
@@ -377,11 +378,25 @@ class BinanceClient:
             print(f"Candle API call count: {call_count}")
             call_count += 1
 
-            klines = self.client.klines(interval=timeframe,
-                                        limit=1000,
-                                        symbol=symbol,
-                                        startTime=int(startTime),
-                                        endTime=int(timeNow))
+            attempts = 1
+            max_attempts = 5
+            while True:
+                try:
+                    klines = self.client.klines(interval=timeframe,
+                                                limit=1000,
+                                                symbol=symbol,
+                                                startTime=int(startTime),
+                                                endTime=int(timeNow))
+                    break
+                except ConnectionError as e:
+                    if attempts >= max_attempts:
+                        raise Exception(f"Binance client failed 5 times to get klines. Connection Error: {e}")
+                    print(
+                        f"Caught connection error which could be down to flakiness. Attempts: {attempts}. \n"
+                        f"Retrying {max_attempts - attempts} more times. Error: {e}"
+                    )
+                    time.sleep(5)
+                attempts += 1
 
             for kline in klines:
                 all_candles.openTime.append(kline[0])
