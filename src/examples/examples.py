@@ -25,6 +25,12 @@ def test_create_ma_crossover():
     all_candles.create_crossover_graph(1, 2, units="hours", save=False)
 
 
+def test_get_klines(test):
+    client = BinanceClient(test=test)
+    all_candles = client.get_klines(timeframe="1m", hours=17)
+    return all_candles
+
+
 def _position_summary(test):
     client = BinanceClient(test=test)
     print(client.position_summary())
@@ -167,7 +173,8 @@ def _get_open_order_ids(test):
 
 if __name__ == "__main__":
     test = False
-    _position_summary(test=test)
+    # _position_summary(test=test)
+    print(len(test_get_klines(test)))
     # _ma_crossover_sell_prod()
     # _account_balance_by_symbol(test=test, symbol="GBP")
     # _account_balance_by_symbol(test=test, symbol="ETH")
