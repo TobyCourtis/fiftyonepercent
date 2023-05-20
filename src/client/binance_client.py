@@ -388,14 +388,15 @@ class BinanceClient:
                                                 startTime=int(startTime),
                                                 endTime=int(timeNow))
                     break
-                except ConnectionError as e:
+                except Exception as e:
+                    print("get_klines_exception")
                     if attempts >= max_attempts:
                         raise Exception(f"Binance client failed 5 times to get klines. Connection Error: {e}")
                     print(
                         f"Caught connection error which could be down to flakiness. Attempts: {attempts}. \n"
                         f"Retrying {max_attempts - attempts} more times. Error: {e}"
                     )
-                    time.sleep(5)
+                    time.sleep(10)
                 attempts += 1
 
             for kline in klines:
