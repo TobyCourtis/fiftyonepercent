@@ -396,7 +396,7 @@ class BinanceClient:
                         f"Caught connection error which could be down to flakiness. Attempts: {attempts}. \n"
                         f"Retrying {max_attempts - attempts} more times. Error: {e}"
                     )
-                    time.sleep(10)
+                    time.sleep(12)
                 attempts += 1
 
             for kline in klines:
