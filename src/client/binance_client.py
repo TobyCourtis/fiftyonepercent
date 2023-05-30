@@ -15,7 +15,7 @@ from pandas import DataFrame
 from src.notify import notifier, slack_image_upload
 from src.types.candlesticks import Candlesticks
 from src.utils.utils import Side, epoch_to_date, create_image_from_dataframe, OrderType, add_spacing, PositionType, \
-    round_down_to_decimal_place
+    round_down_to_decimal_place, one_minute_as_epoch
 
 
 class BinanceClient:
@@ -363,7 +363,7 @@ class BinanceClient:
         """
         timeNow = datetime.datetime.now().timestamp() * 1000
         if "startTime" in kwargs:
-            startTime = kwargs['startTime']
+            startTime = kwargs['startTime']  # must be epoch with milliseconds
         else:
             startTime = (datetime.datetime.now() - datetime.timedelta(**kwargs)).timestamp() * 1000
 
@@ -417,7 +417,8 @@ class BinanceClient:
             if len(klines) < 1000:
                 gathered_all_klines = True
             else:
-                startTime = all_candles.closeTime[-1]  # renew data pull from latest candle close time
+                # TODO - CHECK THIS OPEN VALUE IS CORRECT (we may have duplicates)
+                startTime = all_candles.openTime[-1] + one_minute_as_epoch  # start from the next required candle time
         return all_candles
 
     def ticker_24h(self):

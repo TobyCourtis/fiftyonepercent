@@ -6,7 +6,7 @@ from src.client.binance_client import BinanceClient
 from src.types.candlesticks import Candlesticks
 
 
-def plot(candles: Candlesticks):
+def plotly_plot(candles: Candlesticks):
     """
     Main plot function for any Candlesticks object
 
@@ -30,4 +30,4 @@ def plot(candles: Candlesticks):
 if __name__ == "__main__":
     client = BinanceClient(test=True)
     candles = client.get_klines("15m", days=1)
-    plot(candles)
+    plotly_plot(candles)

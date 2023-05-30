@@ -176,27 +176,44 @@ class Candlesticks:
         self.takerBuyQuoteAssetVolume += candles.takerBuyQuoteAssetVolume
         self.ignore += candles.ignore
 
-    def shorten(self, limit=43_200):  # default to 30 days of candles in 1m intervals
-        if type(limit) is not int:
-            raise TypeError(f"Expected integer to shorten candles to but received '{type(limit)}'")
-        if limit < 1:
-            raise ValueError(f"Limit '{limit}' is not a valid positive integer to shorten the candle length to.")
-        if len(self) <= limit:
+    def shorten(self, from_limit=43_200, to_limit=None):  # default to 30 days of candles in 1m intervals
+        if type(from_limit) is not int:
+            raise TypeError(f"Expected integer to shorten candles to but received '{type(from_limit)}'")
+        if from_limit < 1:
+            raise ValueError(f"Limit '{from_limit}' is not a valid positive integer to shorten the candle length to.")
+        if len(self) < from_limit:
             pass  # no need to shorten
-        else:
-            # TODO - refactor into looping through a list of candlesticks attrs and calling a lamda to shorten to limit
-            self.openTime = self.openTime[-limit:]
-            self.open = self.open[-limit:]
-            self.high = self.high[-limit:]
-            self.low = self.low[-limit:]
-            self.close = self.close[-limit:]
-            self.volume = self.volume[-limit:]
-            self.closeTime = self.closeTime[-limit:]
-            self.quoteAssetVolume = self.quoteAssetVolume[-limit:]
-            self.numberOfTrades = self.numberOfTrades[-limit:]
-            self.takerBuyBaseAssetVolume = self.takerBuyBaseAssetVolume[-limit:]
-            self.takerBuyQuoteAssetVolume = self.takerBuyQuoteAssetVolume[-limit:]
-            self.ignore = self.ignore[-limit:]
+        if to_limit is not None:
+            if to_limit > from_limit:
+                raise ValueError(f"To limit ({to_limit}) cannot be larger than from limit ({from_limit})")
+
+        # TODO - refactor into looping through a list of candlesticks attrs and calling a lamda to shorten to limit
+        self.openTime = self.openTime[-from_limit:]
+        self.open = self.open[-from_limit:]
+        self.high = self.high[-from_limit:]
+        self.low = self.low[-from_limit:]
+        self.close = self.close[-from_limit:]
+        self.volume = self.volume[-from_limit:]
+        self.closeTime = self.closeTime[-from_limit:]
+        self.quoteAssetVolume = self.quoteAssetVolume[-from_limit:]
+        self.numberOfTrades = self.numberOfTrades[-from_limit:]
+        self.takerBuyBaseAssetVolume = self.takerBuyBaseAssetVolume[-from_limit:]
+        self.takerBuyQuoteAssetVolume = self.takerBuyQuoteAssetVolume[-from_limit:]
+        self.ignore = self.ignore[-from_limit:]
+
+        if to_limit is not None:
+            self.openTime = self.openTime[:-to_limit]
+            self.open = self.open[:-to_limit]
+            self.high = self.high[:-to_limit]
+            self.low = self.low[:-to_limit]
+            self.close = self.close[:-to_limit]
+            self.volume = self.volume[:-to_limit]
+            self.closeTime = self.closeTime[:-to_limit]
+            self.quoteAssetVolume = self.quoteAssetVolume[:-to_limit]
+            self.numberOfTrades = self.numberOfTrades[:-to_limit]
+            self.takerBuyBaseAssetVolume = self.takerBuyBaseAssetVolume[:-to_limit]
+            self.takerBuyQuoteAssetVolume = self.takerBuyQuoteAssetVolume[:-to_limit]
+            self.ignore = self.ignore[:-to_limit]
 
 
 if __name__ == "__main__":
