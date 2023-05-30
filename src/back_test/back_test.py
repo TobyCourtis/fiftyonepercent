@@ -8,13 +8,14 @@ from src.utils.utils import bruce_buffer, one_minute_as_epoch
 
 
 def run_back_test():
+    filename = f"back_test_output_{datetime.datetime.now().strftime('%d_%m_%y_%H_%M')}.txt"
     days_from = 699
-    days_to = 679
+    days_to = None
     duration = 699 - (days_to if days_to is not None else 0)
 
     candles_in_day = 1440
 
-    candles = get_cache_and_add_to_candles(days=700)
+    candles = get_cache_and_add_to_candles(days=700)  # one time operation with caching
 
     print(f"Length: {len(candles)}")
     candles.shorten(from_limit=(days_from * candles_in_day),
@@ -58,7 +59,9 @@ def run_back_test():
                         last_row = df.iloc[-1]
                         PNL += last_row['Close']  # add a final sell to sort PNL
 
-                print(f"Units={units}, Short={short_window}, Long={long_window}, Buys={buys}, Sells={sells}, PNL={PNL}")
+                output = f"Units={units}, Short={short_window}, Long={long_window}, Buys={buys}, Sells={sells}, PNL={PNL}"
+                print(output)
+                append_string_to_file(filename, output)
 
 
 def save_candle_history(candles: Candlesticks):
@@ -143,6 +146,15 @@ def get_cache_and_add_to_candles(**kwargs):
         return new_candle_history
 
 
+def append_string_to_file(filename, new_line_string):
+    try:
+        with open(filename, 'a') as file:
+            file.write(new_line_string + '\n')
+    except Exception as e:
+        print(f"ERROR writing backtest data to file {filename}")
+        print(f"Exception: {e}")
+
+
 def temp_get_klines():
     client = BinanceClient(test=False)
     candles = client.get_klines(startTime=1675536420001.000)
@@ -150,5 +162,5 @@ def temp_get_klines():
 
 
 if __name__ == '__main__':
-    # get_cache_and_add_to_candles(days=701)  # 1008 calls, all history
+    # get_cache_and_add_to_candles(days=701)  # 1008 calls gathers all history which only needs to be executed once
     run_back_test()
