@@ -5,6 +5,7 @@ from src.types.candlesticks import Candlesticks, Candlestick
 
 
 class CandlestickDbService:
+    # TODO - when this is a public DB refactor into config
     table_name = "CANDLESTICK"
     postgres_db_info = {
         "host": "0.0.0.0",
@@ -57,6 +58,10 @@ class CandlestickDbService:
             candlesticks.append_candlestick(candlestick)
         cur.close()
         return candlesticks
+
+    """
+    PRIVATE
+    """
 
     def _insert_candlestick(self, cursor, candlestick: Candlestick) -> None:
         insert_query = f"INSERT INTO {self.table_name} (openTime, open, high, low, close, volume, closeTime," \
