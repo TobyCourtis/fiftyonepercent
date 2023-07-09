@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from dataclasses import dataclass
 from pprint import pprint
 
 import matplotlib.pyplot as plt
@@ -31,7 +32,7 @@ class Candlesticks:
         self.takerBuyQuoteAssetVolume = []
         self.ignore = []
 
-        self.candleTimeframe = "NONE"
+        self.candleTimeframe = None
 
     def __len__(self):
         return len(self.openTime)  # essentially equals No. candles
@@ -159,9 +160,7 @@ class Candlesticks:
     def add(self, candles: Candlesticks):
         if self.closeTime[-1] > candles.openTime[0]:
             raise Exception(f"Candlesticks being appended have open time before closing time of current candlesticks")
-        if self.candleTimeframe != candles.candleTimeframe:
-            raise Exception(
-                f"Cannot add candles with different timeframes ({self.candleTimeframe} and {candles.candleTimeframe}")
+        self._validate_timeframes_match(candles.candleTimeframe)
 
         self.openTime += candles.openTime
         self.open += candles.open
@@ -175,6 +174,11 @@ class Candlesticks:
         self.takerBuyBaseAssetVolume += candles.takerBuyBaseAssetVolume
         self.takerBuyQuoteAssetVolume += candles.takerBuyQuoteAssetVolume
         self.ignore += candles.ignore
+
+    def _validate_timeframes_match(self, input_timeframe):
+        if self.candleTimeframe != input_timeframe:
+            raise Exception(
+                f"Cannot append candles with different timeframes ({self.candleTimeframe} and {input_timeframe}")
 
     def shorten(self, from_limit=43_200, to_limit=None):  # default to 30 days of candles in 1m intervals
         if type(from_limit) is not int:
@@ -214,6 +218,42 @@ class Candlesticks:
             self.takerBuyBaseAssetVolume = self.takerBuyBaseAssetVolume[:-to_limit]
             self.takerBuyQuoteAssetVolume = self.takerBuyQuoteAssetVolume[:-to_limit]
             self.ignore = self.ignore[:-to_limit]
+
+    def append_candlestick(self, c: Candlestick) -> None:
+        if self.candleTimeframe is None:
+            self.candleTimeframe = c.candleTimeframe
+        else:
+            self._validate_timeframes_match(c.candleTimeframe)
+
+        self.openTime.append(c.openTime)
+        self.open.append(c.open)
+        self.high.append(c.high)
+        self.low.append(c.low)
+        self.close.append(c.close)
+        self.volume.append(c.volume)
+        self.closeTime.append(c.closeTime)
+        self.quoteAssetVolume.append(c.quoteAssetVolume)
+        self.numberOfTrades.append(c.numberOfTrades)
+        self.takerBuyBaseAssetVolume.append(c.takerBuyBaseAssetVolume)
+        self.takerBuyQuoteAssetVolume.append(c.takerBuyQuoteAssetVolume)
+        self.ignore.append(c.ignore)
+
+
+@dataclass
+class Candlestick:
+    openTime: int
+    open: str
+    high: str
+    low: str
+    close: str
+    volume: str
+    closeTime: int
+    quoteAssetVolume: str
+    numberOfTrades: int
+    takerBuyBaseAssetVolume: str
+    takerBuyQuoteAssetVolume: str
+    ignore: str
+    candleTimeframe: str
 
 
 if __name__ == "__main__":
