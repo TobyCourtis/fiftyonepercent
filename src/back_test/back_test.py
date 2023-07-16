@@ -29,58 +29,61 @@ def run_back_test():
     print(
         f"PNL for {duration} days starting {days_from} days ago"
         f" {f'ending {days_to} days ago ' if days_to is not None else ''}using different strategies:")
-    for i in range(2):
-        if i == 0:
-            units = "hours"
-        else:
-            units = "days"
-        '''
-        For Hours and Days:
-        Iterate through 1 to 12 for short and then long window = short * range 2 to 6
-        These are our different windows to test how they work as a strategy
-        '''
-        for j in range(1, 12):
-            for k in range(2, 6):
-                buys = 0
-                sells = 0
-                short_window = j
-                long_window = short_window * k
-                df = candles.create_ma_crossover_dataframe(short_window, long_window, units=units)
-                '''
-                For all of our candles - create a MA crossover dataframe of when to buy and sell
-                '''
-                PNL = None
-                last_pos = None
-                for index, row in df.iterrows():
-                    '''
-                    Iterate through the dataframe and buy if BUY signal and SELL if sell
+    units = "days"
+    for j in range(1, 12):
+        for k in range(2, 6):
+            buys = 0
+            sells = 0
+            short_window = j
+            long_window = short_window * k
+            df = candles.create_ma_crossover_dataframe(short_window, long_window, units=units)
+            '''
+            For all of our candles - create a MA crossover dataframe of when to buy and sell
+            '''
+            start_fiat_wallet_value = 200.0
+            fiat_wallet = start_fiat_wallet_value
+            eth_qty = 0.0
 
-                    NB - we begin having no position so if we get immediate sell, do nothing
-                    NB 2 - We take the current price to be the close price of the latest candle (may not be accurate)
-                    '''
-                    if row['Position'] == 1:
-                        if PNL is None:
-                            PNL = 0
-                        PNL -= row['Close']  # minus buys
-                        buys += 1
-                        last_pos = 'buy'
-                    elif row['Position'] == -1:
-                        if PNL is not None:
-                            PNL += row['Close']  # add the sells
-                            sells += 1
-                            last_pos = 'sell'
-                if last_pos is not None:
-                    """
-                     End by selling what we have at market value so we can calculate PNL
-                    """
-                    if last_pos == 'buy':
-                        # fake sell
-                        last_row = df.iloc[-1]
-                        PNL += last_row['Close']  # add a final sell to sort PNL
+            last_pos = None
+            for index, row in df.iterrows():
+                '''
+                Iterate through the dataframe and buy if BUY signal and SELL if sell
 
-                output = f"Units={units}, Short={short_window}, Long={long_window}, Buys={buys}, Sells={sells}, PNL={PNL}"
-                print(output)
-                append_string_to_file(filename, output)
+                NB - we begin having no position so if we get immediate sell, do nothing
+                NB 2 - We take the current price to be the close price of the latest candle (may not be accurate)
+                '''
+                if row['Position'] == 1:
+                    qty_purchased = fiat_wallet / row['Close']
+                    qty_purchased -= qty_purchased * 0.001
+                    eth_qty = qty_purchased
+                    fiat_wallet = 0.0
+
+                    buys += 1
+                    last_pos = 'buy'
+                elif row['Position'] == -1:
+                    if eth_qty != 0.0:
+                        fiat_gained = eth_qty * row['Close']
+                        fiat_gained -= fiat_gained * 0.001
+                        fiat_wallet = fiat_gained
+                        eth_qty = 0.0
+
+                        sells += 1
+                        last_pos = 'sell'
+            if last_pos is not None:
+                """
+                 End by selling what we have at market value so we can calculate PNL
+                """
+                if last_pos == 'buy':
+                    last_row = df.iloc[-1]
+
+                    fiat_gained = eth_qty * last_row['Close']
+                    fiat_gained -= fiat_gained * 0.001
+                    fiat_wallet = fiat_gained
+                    eth_qty = 0.0
+
+            output = f"Units={units}, Short={short_window}, Long={long_window}, Buys={buys}, Sells={sells}, PNL={fiat_wallet - start_fiat_wallet_value}"
+            print(output)
+            append_string_to_file(filename, output)
 
 
 def save_candle_history(candles: Candlesticks):
