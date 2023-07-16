@@ -61,25 +61,24 @@ class Candlesticks:
         """
         main_df = self.create_ma_crossover_dataframe(window_min, window_max, units)
 
-        # 'buy/sell' signals
-        main_df['buy_sell_x'] = main_df['Position'].replace(0.0, np.NAN)
-        main_df['buy_y'] = main_df.apply(lambda x: x['Short'] if x['buy_sell_x'] == 1.0 else np.NAN, axis=1)
-        main_df['sell_y'] = main_df.apply(lambda x: x['Long'] if x['buy_sell_x'] == -1.0 else np.NAN, axis=1)
+        self.plot_crossover_graph_from_dataframe(main_df, save)
 
+    def plot_crossover_graph_from_dataframe(self, crossover_df, save=True):
+        # 'buy/sell' signals
+        crossover_df['buy_sell_x'] = crossover_df['Position'].replace(0.0, np.NAN)
+        crossover_df['buy_y'] = crossover_df.apply(lambda x: x['Short'] if x['buy_sell_x'] == 1.0 else np.NAN, axis=1)
+        crossover_df['sell_y'] = crossover_df.apply(lambda x: x['Long'] if x['buy_sell_x'] == -1.0 else np.NAN, axis=1)
         # PLOTTING
         plt.figure(figsize=(20, 10))
-
-        main_df['Close'].plot(color='k', label='Close Price')
-        main_df['Short'].plot(color='b', label='Short Price')
-        main_df['Long'].plot(color='g', label='Long Price')
-
-        plt.plot(main_df['buy_sell_x'].index,
-                 main_df['buy_y'],
+        crossover_df['Close'].plot(color='k', label='Close Price')
+        crossover_df['Short'].plot(color='b', label='Short Price')
+        crossover_df['Long'].plot(color='g', label='Long Price')
+        plt.plot(crossover_df['buy_sell_x'].index,
+                 crossover_df['buy_y'],
                  '^', markersize=15, color='g', label='buy')
-
         # plot 'sell' signals
-        plt.plot(main_df['buy_sell_x'].index,
-                 main_df['sell_y'],
+        plt.plot(crossover_df['buy_sell_x'].index,
+                 crossover_df['sell_y'],
                  'v', markersize=15, color='r', label='sell')
 
         # METADATA
