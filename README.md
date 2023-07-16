@@ -14,11 +14,15 @@ This project features a main Python file housing a "BinanceClient" class which a
 ## External Docs
 [Binance API Documentation](https://binance-docs.github.io/apidocs)
 
+## Prerequisites
+
+`python3.10`
+
 
 ## Dependencies
 All dependencies should be included in the requirements.txt file
 
-`python3 -m pip install -r requirements.txt`
+`python3.10 -m pip install -r requirements.txt`
 
 ## Running locally
 Due to our import structure you must run this from the project ROOT before using our Python files:
@@ -31,4 +35,4 @@ To verify the project root is in your PYTHONPATH run the following:
 
 ## Testing
 
-`cd src && python3 -m unittest`
+`cd src && python3.10 -m unittest`
