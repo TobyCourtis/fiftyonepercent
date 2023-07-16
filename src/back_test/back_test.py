@@ -69,10 +69,10 @@ def run_back_test():
                             PNL += row['Close']  # add the sells
                             sells += 1
                             last_pos = 'sell'
-               '''
-                End by selling what we have at market value so we can calculate PNL
-               '''
                 if last_pos is not None:
+                    """
+                     End by selling what we have at market value so we can calculate PNL
+                    """
                     if last_pos == 'buy':
                         # fake sell
                         last_row = df.iloc[-1]
