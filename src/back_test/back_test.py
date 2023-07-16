@@ -16,6 +16,9 @@ def run_back_test():
     candles_in_day = 1440
 
     candles = get_cache_and_add_to_candles(days=700)  # one time operation with caching
+    '''
+    Get candles for past 700 days
+    '''
 
     print(f"Length: {len(candles)}")
     candles.shorten(from_limit=(days_from * candles_in_day),
@@ -31,6 +34,11 @@ def run_back_test():
             units = "hours"
         else:
             units = "days"
+        '''
+        For Hours and Days:
+        Iterate through 1 to 12 for short and then long window = short * range 2 to 6
+        These are our different windows to test how they work as a strategy
+        '''
         for j in range(1, 12):
             for k in range(2, 6):
                 buys = 0
@@ -38,9 +46,18 @@ def run_back_test():
                 short_window = j
                 long_window = short_window * k
                 df = candles.create_ma_crossover_dataframe(short_window, long_window, units=units)
+                '''
+                For all of our candles - create a MA crossover dataframe of when to buy and sell
+                '''
                 PNL = None
                 last_pos = None
                 for index, row in df.iterrows():
+                    '''
+                    Iterate through the dataframe and buy if BUY signal and SELL if sell
+
+                    NB - we begin having no position so if we get immediate sell, do nothing
+                    NB 2 - We take the current price to be the close price of the latest candle (may not be accurate)
+                    '''
                     if row['Position'] == 1:
                         if PNL is None:
                             PNL = 0
@@ -52,7 +69,9 @@ def run_back_test():
                             PNL += row['Close']  # add the sells
                             sells += 1
                             last_pos = 'sell'
-                # end by selling at current value?
+               '''
+                End by selling what we have at market value so we can calculate PNL
+               '''
                 if last_pos is not None:
                     if last_pos == 'buy':
                         # fake sell
