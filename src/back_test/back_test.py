@@ -30,6 +30,7 @@ def run_back_test():
         f"PNL for {duration} days starting {days_from} days ago"
         f" {f'ending {days_to} days ago ' if days_to is not None else ''}using different strategies:")
     units = "days"
+    pnl_to_output_str_dict = {}
     for j in range(1, 12):
         for k in range(2, 6):
             buys = 0
@@ -85,8 +86,16 @@ def run_back_test():
             sign = "+++" if PNL > 0 else "---"
             output = f"Units={units}, Short={short_window}, Long={long_window}, Buys={buys}, " \
                      f"Sells={sells}, PNL:{sign}{abs(PNL)}"
+            pnl_to_output_str_dict[PNL] = output
             print(output)
             append_string_to_file(filename, output)
+
+    keys = list(pnl_to_output_str_dict.keys())
+    keys.sort()
+    append_string_to_file(filename, "\nBest Performing Strategies:\n")
+    for i in range(1, 4):
+        out = pnl_to_output_str_dict[keys[-i]]
+        append_string_to_file(filename, out)
 
 
 def save_candle_history(candles: Candlesticks):
