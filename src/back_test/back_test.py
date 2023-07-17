@@ -81,7 +81,10 @@ def run_back_test():
                     fiat_wallet = fiat_gained
                     eth_qty = 0.0
 
-            output = f"Units={units}, Short={short_window}, Long={long_window}, Buys={buys}, Sells={sells}, PNL={fiat_wallet - start_fiat_wallet_value}"
+            PNL = float(fiat_wallet - start_fiat_wallet_value)
+            sign = "+++" if PNL > 0 else "---"
+            output = f"Units={units}, Short={short_window}, Long={long_window}, Buys={buys}, " \
+                     f"Sells={sells}, PNL:{sign}{abs(PNL)}"
             print(output)
             append_string_to_file(filename, output)
 
