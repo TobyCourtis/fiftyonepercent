@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime, timedelta
 import os
 import pickle
 
@@ -8,27 +8,30 @@ from src.utils.utils import bruce_buffer, one_minute_as_epoch
 
 
 def run_back_test():
-    filename = f"back_test_output_{datetime.datetime.now().strftime('%d_%m_%y_%H_%M')}.txt"
-    days_from = 699
+    '''
+    Specify range for candles to be collected from/to
+    '''
+    days_from = 365
     days_to = None
-    duration = 699 - (days_to if days_to is not None else 0)
 
+    filename = f"back_test_output_{datetime.now().strftime('%d_%m_%y_%H_%M')}.txt"
     candles_in_day = 1440
 
+    '''
+    Get candles for past 700 days considered entire history of Ethereum
+    '''
     candles = get_cache_and_add_to_candles(days=700)  # one time operation with caching
-    '''
-    Get candles for past 700 days
-    '''
 
-    print(f"Length: {len(candles)}")
+    # shorten number of candles to required range
     candles.shorten(from_limit=(days_from * candles_in_day),
                     to_limit=(days_to * candles_in_day) if days_to is not None else None)
-    print(f"Length: {len(candles)}")
     bruce_buffer()
 
-    print(
-        f"PNL for {duration} days starting {days_from} days ago"
-        f" {f'ending {days_to} days ago ' if days_to is not None else ''}using different strategies:")
+    strategy_info = f"Backtesting from {get_date_string(days_from)} " \
+                    f"until {'now' if days_to is None else get_date_string(days_to)}\n"
+    print(strategy_info)
+    append_string_to_file(filename, strategy_info)
+
     units = "days"
     pnl_to_output_str_dict = {}
     for j in range(1, 12):
@@ -91,11 +94,14 @@ def run_back_test():
             append_string_to_file(filename, output)
 
     keys = list(pnl_to_output_str_dict.keys())
-    keys.sort()
-    append_string_to_file(filename, "\nBest Performing Strategies:\n")
-    for i in range(1, 4):
-        out = pnl_to_output_str_dict[keys[-i]]
-        append_string_to_file(filename, out)
+    keys.sort(reverse=True)
+    append_string_to_file(filename, "\nOrdered Output:\n")
+    print(f"\nSaving strategies ordered by PnL performance to {filename}\n")
+    for key in keys:
+        output = pnl_to_output_str_dict[key]
+        append_string_to_file(filename, output)
+
+    print("\nFinished backtesting and exited.")
 
 
 def save_candle_history(candles: Candlesticks):
@@ -128,7 +134,7 @@ def get_cache_and_add_to_candles(**kwargs):
     if "startTime" in kwargs:
         startTime = kwargs['startTime']
     else:
-        startTime = (datetime.datetime.now() - datetime.timedelta(**kwargs)).timestamp() * 1000
+        startTime = (datetime.now() - timedelta(**kwargs)).timestamp() * 1000
 
     # 3. get important history data (start and end times)
     if all_candle_history is not None:
@@ -155,7 +161,7 @@ def get_cache_and_add_to_candles(**kwargs):
         """
         START TIME WITHIN HISTORY SO ONLY FETCHING NEW CANDLES
         """
-        timeNow = datetime.datetime.now().timestamp() * 1000  # acts as endTime in get_klines
+        timeNow = datetime.now().timestamp() * 1000  # acts as endTime in get_klines
 
         # check if candle history is already up-to-date
         if timeNow < history_end_close_time:
@@ -178,6 +184,13 @@ def get_cache_and_add_to_candles(**kwargs):
         new_candle_history = client.get_klines(**kwargs)
         save_candle_history(new_candle_history)
         return new_candle_history
+
+
+def get_date_string(days):
+    today = datetime.now()
+    target_date = today - timedelta(days=days)
+    date_string = target_date.strftime("%d-%m-%Y")
+    return date_string
 
 
 def append_string_to_file(filename, new_line_string):
