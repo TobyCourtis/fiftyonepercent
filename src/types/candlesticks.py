@@ -10,6 +10,55 @@ import pandas as pd
 from src.utils.utils import epoch_to_date, convert_to_hours, Side
 
 
+def plot_crossover_graph_from_dataframe(crossover_df, save=True):
+    # 'buy/sell' signals
+    crossover_df['buy_sell_x'] = crossover_df['Position'].replace(0.0, np.NAN)
+    crossover_df['buy_y'] = np.where(crossover_df['buy_sell_x'] == 1.0, crossover_df['Short'], np.NAN)
+    crossover_df['sell_y'] = np.where(crossover_df['buy_sell_x'] == -1.0, crossover_df['Long'], np.NAN)
+
+    # downsample and remove unwanted data
+    downsample_factor = 10  # 1 in downsample_factor rows are kept
+    crossover_df.drop('Position', axis=1, inplace=True)
+    crossover_df.drop('Signal', axis=1, inplace=True)
+
+    downsampled_df = pd.DataFrame()
+    downsampled_df['Close'] = crossover_df['Close'].copy()
+    downsampled_df['Short'] = crossover_df['Short'].copy()
+    downsampled_df['Long'] = crossover_df['Long'].copy()
+    downsampled_df.reset_index(drop=True, inplace=True)
+    crossover_df['Close'] = np.where(downsampled_df.index % downsample_factor == 0, downsampled_df['Close'], np.nan)
+    crossover_df['Short'] = np.where(downsampled_df.index % downsample_factor == 0, downsampled_df['Short'], np.nan)
+    crossover_df['Long'] = np.where(downsampled_df.index % downsample_factor == 0, downsampled_df['Long'], np.nan)
+
+    crossover_df.dropna(how='all', inplace=True)  # drop all rows that are NAN for all columns
+
+    # PLOTTING
+    plt.figure(figsize=(20, 10))
+    crossover_df['Close'].plot(color='k', label='Close Price')
+    crossover_df['Short'].plot(color='b', label='Short Price')
+    crossover_df['Long'].plot(color='g', label='Long Price')
+    plt.plot(crossover_df['buy_sell_x'].index,
+             crossover_df['buy_y'],
+             '^', markersize=15, color='g', label='buy')
+    # plot 'sell' signals
+    plt.plot(crossover_df['buy_sell_x'].index,
+             crossover_df['sell_y'],
+             'v', markersize=15, color='r', label='sell')
+
+    # METADATA
+    plt.ylabel('Price of ETH (£)', fontsize=15)
+    plt.xlabel('Date', fontsize=15)
+    plt.title('ETH MA Crossover', fontsize=20)
+    plt.legend()
+    if save:
+        current_dir = os.path.dirname(os.path.realpath(__file__))
+        file_path = f"{current_dir}/../live/current_plot_snapshot.png"
+        print(f"Saved crossover image to {file_path}")
+        plt.savefig(file_path)
+    else:
+        plt.show()
+
+
 class Candlesticks:
     """
     NB: This data type stores many and not singular candlesticks
@@ -61,38 +110,7 @@ class Candlesticks:
         """
         main_df = self.create_ma_crossover_dataframe(window_min, window_max, units)
 
-        self.plot_crossover_graph_from_dataframe(main_df, save)
-
-    def plot_crossover_graph_from_dataframe(self, crossover_df, save=True):
-        # 'buy/sell' signals
-        crossover_df['buy_sell_x'] = crossover_df['Position'].replace(0.0, np.NAN)
-        crossover_df['buy_y'] = crossover_df.apply(lambda x: x['Short'] if x['buy_sell_x'] == 1.0 else np.NAN, axis=1)
-        crossover_df['sell_y'] = crossover_df.apply(lambda x: x['Long'] if x['buy_sell_x'] == -1.0 else np.NAN, axis=1)
-        # PLOTTING
-        plt.figure(figsize=(20, 10))
-        crossover_df['Close'].plot(color='k', label='Close Price')
-        crossover_df['Short'].plot(color='b', label='Short Price')
-        crossover_df['Long'].plot(color='g', label='Long Price')
-        plt.plot(crossover_df['buy_sell_x'].index,
-                 crossover_df['buy_y'],
-                 '^', markersize=15, color='g', label='buy')
-        # plot 'sell' signals
-        plt.plot(crossover_df['buy_sell_x'].index,
-                 crossover_df['sell_y'],
-                 'v', markersize=15, color='r', label='sell')
-
-        # METADATA
-        plt.ylabel('Price of ETH (£)', fontsize=15)
-        plt.xlabel('Date', fontsize=15)
-        plt.title('ETH MA Crossover', fontsize=20)
-        plt.legend()
-        if save:
-            current_dir = os.path.dirname(os.path.realpath(__file__))
-            file_path = f"{current_dir}/../live/current_plot_snapshot.png"
-            print(f"Saved crossover image to {file_path}")
-            plt.savefig(file_path)
-        else:
-            plt.show()
+        plot_crossover_graph_from_dataframe(main_df, save)
 
     def create_ma_crossover_dataframe(self, window_min, window_max, units):
         """
