@@ -5,10 +5,13 @@ Examples will include buying, selling, plotting and more.
 """
 
 import json
+import time
 
 import pandas as pd
 
+from src.back_test.back_test import get_cache_and_add_to_candles
 from src.client.binance_client import BinanceClient
+from src.types.candlesticks import plot_crossover_graph_from_dataframe
 from src.utils.ma_crossover_utils import buy, sell
 from src.utils.utils import Side, OrderType
 
@@ -23,6 +26,17 @@ def test_create_ma_crossover():
     client = BinanceClient(test=True)
     all_candles = client.get_klines(timeframe="1m", days=1)
     all_candles.create_crossover_graph(1, 2, units="hours", save=False)
+
+
+def create_ma_crossover():
+    start_time = time.time()
+
+    all_candles = get_cache_and_add_to_candles(days=700)  # one time operation with caching
+    crossover_df = all_candles.create_ma_crossover_dataframe(1, 2, "days")
+    plot_crossover_graph_from_dataframe(crossover_df, save=True)  # save will save PNG to src/live directory
+
+    elapsed_time = time.time() - start_time
+    print(f"Elapsed time: {elapsed_time} seconds")
 
 
 def test_get_klines(test):
@@ -172,9 +186,9 @@ def _get_open_order_ids(test):
 
 
 if __name__ == "__main__":
-    test = False
+    create_ma_crossover()
     # _position_summary(test=test)
-    print(len(test_get_klines(test)))
+    # print(len(test_get_klines(test)))
     # _ma_crossover_sell_prod()
     # _account_balance_by_symbol(test=test, symbol="GBP")
     # _account_balance_by_symbol(test=test, symbol="ETH")
