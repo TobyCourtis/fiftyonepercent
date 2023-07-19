@@ -114,8 +114,9 @@ def save_candle_history(candles: Candlesticks):
 
 def read_candle_history():
     all_candle_history = Candlesticks()
+    current_dir = os.path.dirname(os.path.realpath(__file__))
     try:
-        with open(f'candlestick_history.pkl', 'rb') as file:
+        with open(f'{current_dir}/candlestick_history.pkl', 'rb') as file:
             all_candle_history = pickle.load(file)
         print(f"Read candle history of length: {len(all_candle_history)}")
         return all_candle_history
