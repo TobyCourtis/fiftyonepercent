@@ -10,7 +10,7 @@ import pandas as pd
 from src.utils.utils import epoch_to_date, convert_to_hours, Side
 
 
-def plot_crossover_graph_from_dataframe(crossover_df, save=True):
+def plot_crossover_graph_from_dataframe(crossover_df, save_path=None):
     # 'buy/sell' signals
     crossover_df['buy_sell_x'] = crossover_df['Position'].replace(0.0, np.NAN)
     crossover_df['buy_y'] = np.where(crossover_df['buy_sell_x'] == 1.0, crossover_df['Short'], np.NAN)
@@ -50,13 +50,12 @@ def plot_crossover_graph_from_dataframe(crossover_df, save=True):
     plt.xlabel('Date', fontsize=15)
     plt.title('ETH MA Crossover', fontsize=20)
     plt.legend()
-    if save:
-        current_dir = os.path.dirname(os.path.realpath(__file__))
-        file_path = f"{current_dir}/../live/current_plot_snapshot.png"
-        print(f"Saved crossover image to {file_path}")
-        plt.savefig(file_path)
-    else:
+    if save_path is None:
         plt.show()
+    else:
+        print(f"Saved crossover image to {save_path}")
+        plt.savefig(save_path)
+    plt.close()
 
 
 class Candlesticks:
@@ -110,7 +109,9 @@ class Candlesticks:
         """
         main_df = self.create_ma_crossover_dataframe(window_min, window_max, units)
 
-        plot_crossover_graph_from_dataframe(main_df, save)
+        current_dir = os.path.dirname(os.path.realpath(__file__))
+        file_path = f"{current_dir}/../live/current_plot_snapshot.png"
+        plot_crossover_graph_from_dataframe(main_df, file_path)
 
     def create_ma_crossover_dataframe(self, window_min, window_max, units):
         """
