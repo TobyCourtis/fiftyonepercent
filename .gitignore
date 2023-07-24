@@ -8,3 +8,4 @@
 /src/client/*.png
 /src/examples/*.json
 src/back_test/candlestick_history.pkl
+/src/back_test/results/
