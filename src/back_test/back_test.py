@@ -1,20 +1,24 @@
-from datetime import datetime, timedelta
 import os
 import pickle
+from datetime import datetime, timedelta
 
 from src.client.binance_client import BinanceClient
-from src.types.candlesticks import Candlesticks
-from src.utils.utils import bruce_buffer, one_minute_as_epoch
+from src.types.candlesticks import Candlesticks, plot_crossover_graph_from_dataframe
+from src.utils.utils import one_minute_as_epoch
 
 
 def run_back_test():
-    '''
+    """
     Specify range for candles to be collected from/to
-    '''
+    """
     days_from = 365
     days_to = None
 
-    filename = f"back_test_output_{datetime.now().strftime('%d_%m_%y_%H_%M')}.txt"
+    current_dir = os.path.dirname(os.path.realpath(__file__))
+    from_date = get_date_string(days_from)
+    to_date = get_date_string(0) if days_to is None else get_date_string(days_to)
+    base_dir = f"{current_dir}/results/{from_date}_to_{to_date}/"
+    csv_filename = base_dir + "results.csv"
     candles_in_day = 1440
 
     '''
@@ -25,17 +29,28 @@ def run_back_test():
     # shorten number of candles to required range
     candles.shorten(from_limit=(days_from * candles_in_day),
                     to_limit=(days_to * candles_in_day) if days_to is not None else None)
-    bruce_buffer()
 
-    strategy_info = f"Backtesting from {get_date_string(days_from)} " \
-                    f"until {'now' if days_to is None else get_date_string(days_to)}\n"
+    strategy_info = f"Backtesting from {from_date} until {to_date}\n"
     print(strategy_info)
-    append_string_to_file(filename, strategy_info)
+
+    # create directory for current market
+    if os.path.exists(base_dir):
+        raise Exception(f"Results already exist for '{base_dir}'.")
+    else:
+        try:
+            os.makedirs(base_dir)
+            print(f"The directory '{base_dir}' was created successfully.")
+        except OSError as e:
+            print(f"Error occurred while creating '{base_dir}': {e}")
+
+    # CSV header
+    append_string_to_file(csv_filename, "Id, Units, Short, Long, Buys, Sells, PNL")
 
     units = "days"
-    pnl_to_output_str_dict = {}
+    strategy_id = 0
     for j in range(1, 12):
         for k in range(2, 6):
+            strategy_id += 1
             buys = 0
             sells = 0
             short_window = j
@@ -86,20 +101,11 @@ def run_back_test():
                     eth_qty = 0.0
 
             PNL = float(fiat_wallet - start_fiat_wallet_value)
-            sign = "+++" if PNL > 0 else "---"
-            output = f"Units={units}, Short={short_window}, Long={long_window}, Buys={buys}, " \
-                     f"Sells={sells}, PNL:{sign}{abs(PNL)}"
-            pnl_to_output_str_dict[PNL] = output
-            print(output)
-            append_string_to_file(filename, output)
+            csv_row = f"{strategy_id}, {units}, {short_window}, {long_window}, {buys}, {sells}, {PNL}"
+            append_string_to_file(csv_filename, csv_row)
 
-    keys = list(pnl_to_output_str_dict.keys())
-    keys.sort(reverse=True)
-    append_string_to_file(filename, "\nOrdered Output:\n")
-    print(f"\nSaving strategies ordered by PnL performance to {filename}\n")
-    for key in keys:
-        output = pnl_to_output_str_dict[key]
-        append_string_to_file(filename, output)
+            # save image of this strategy's dataframe
+            plot_crossover_graph_from_dataframe(df, f"{base_dir}{strategy_id}.png")
 
     print("\nFinished backtesting and exited.")
 
