@@ -29,6 +29,7 @@ To verify the project root is in your PYTHONPATH run the following:
 
 `python3.10 -c 'import sys; print(sys.path)' | grep "/fiftyonepercent'"`
 
+
 ## Testing
 
 `cd src && python3 -m unittest`
