@@ -344,7 +344,7 @@ class BinanceClient:
 
     def avg_price(self, symbol=None) -> float:
         if symbol is None:
-            symbol = "ETHUSDT" if self.test else "ETHGBP"  # only ETH supported for now
+            symbol = "ETHUSDT"  # only ETH supported for now
         avg_price_response = self.client.avg_price(symbol)
         avg_price = float(avg_price_response["price"])
         print(f"Average price now: {avg_price}")
@@ -367,7 +367,7 @@ class BinanceClient:
         else:
             startTime = (datetime.datetime.now() - datetime.timedelta(**kwargs)).timestamp() * 1000
 
-        symbol = "ETHUSDT" if self.test else "ETHGBP"  # only ETH supported for now
+        symbol = "ETHUSDT"  # TODO - Binance removed ETHGBP trade pair, needs reflecting throughout codebase
 
         gathered_all_klines = False
         all_candles = Candlesticks()
